@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#080c14">
+  <meta name="description" content="A private shared knowledge archive">
+  <title>STELLARHAUS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garant:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --bg:        #080c14;
+      --surface:   #0f1520;
+      --surface2:  #161e2e;
+      --border:    #1e2a3e;
+      --gold:      #c9a84c;
+      --gold-dim:  #7a6230;
+      --text:      #e8e2d5;
+      --text-dim:  #7a8299;
+      --text-muted:#4a5268;
+      --accent:    #4a9eff;
+      --danger:    #e05555;
+      --success:   #4caf7d;
+      --radius:    14px;
+      --font-d:    'Cormorant Garant', Georgia, serif;
+      --font-b:    'DM Sans', system-ui, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-b);
+      font-size: 16px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── AUTH ─────────────────────────────── */
+    #auth-view {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background:
+        radial-gradient(ellipse at 25% 20%, rgba(201,168,76,.08) 0%, transparent 55%),
+        radial-gradient(ellipse at 75% 80%, rgba(74,158,255,.05) 0%, transparent 55%),
+        var(--bg);
+    }
+
+    .auth-wordmark {
+      font-family: var(--font-d);
+      font-size: 3.2rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      color: var(--gold);
+      margin-bottom: 2px;
+      text-align: center;
+    }
+
+    .auth-sub {
+      font-size: .75rem;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 44px;
+      font-weight: 300;
+      text-align: center;
+    }
+
+    .auth-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 22px;
+      width: 100%;
+      max-width: 390px;
+    }
+
+    .auth-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 22px;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 10px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      font-family: var(--font-b);
+      font-size: .78rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .auth-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+    /* ── FORMS ────────────────────────────── */
+    .form-group { margin-bottom: 15px; }
+
+    label {
+      display: block;
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: var(--font-b);
+      font-size: .95rem;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--gold-dim);
+      box-shadow: 0 0 0 3px rgba(201,168,76,.08);
+    }
+
+    textarea { resize: vertical; min-height: 130px; line-height: 1.7; }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      border-radius: 9px;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font-b);
+      font-size: .85rem;
+      font-weight: 600;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      transition: all .2s;
+    }
+
+    .btn-primary  { background: var(--gold); color: #05080f; }
+    .btn-primary:hover  { background: #d9b95c; }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--gold-dim); }
+    .btn-danger { background: rgba(224,85,85,.1); color: var(--danger); border: 1px solid rgba(224,85,85,.25); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn + .btn { margin-top: 10px; }
+
+    /* ── APP SHELL ────────────────────────── */
+    #main-app { min-height: 100vh; display: flex; flex-direction: column; }
+
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(8,12,20,.93);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-family: var(--font-d);
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: .1em;
+      color: var(--gold);
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .logo span { color: var(--text-muted); font-weight: 400; }
+
+    .header-right { display: flex; align-items: center; gap: 4px; }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      padding: 9px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color .2s, background .2s;
+    }
+
+    .icon-btn:hover, .icon-btn.active { color: var(--gold); background: rgba(201,168,76,.1); }
+    .icon-btn svg { width: 20px; height: 20px; }
+
+    .main-content {
+      flex: 1;
+      padding: 18px 16px;
+      padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+      max-width: 640px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ── BOTTOM NAV ───────────────────────── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(13,19,30,.97);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 4px 8px;
+      gap: 3px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      font-size: .6rem;
+      font-family: var(--font-b);
+      font-weight: 600;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      transition: color .2s;
+    }
+
+    .nav-item svg { width: 22px; height: 22px; }
+    .nav-item.active { color: var(--gold); }
+
+    /* ── VIEWS ────────────────────────────── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── PAGE HEADER ──────────────────────── */
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .page-title {
+      font-family: var(--font-d);
+      font-size: 1.7rem;
+      font-weight: 600;
+      line-height: 1.1;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--text-dim);
+      font-size: .82rem;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      margin-bottom: 14px;
+      font-family: var(--font-b);
+      transition: color .2s;
+    }
+
+    .back-btn:hover { color: var(--gold); }
+
+    /* ── ALPHA NAV ────────────────────────── */
+    .alpha-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 18px;
+    }
+
+    .alpha-btn {
+      min-width: 30px;
+      padding: 4px 6px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: none;
+      color: var(--text-muted);
+      font-size: .76rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font-b);
+      transition: all .15s;
+      text-align: center;
+    }
+
+    .alpha-btn.has { border-color: var(--gold-dim); color: var(--text); }
+    .alpha-btn:hover, .alpha-btn:focus { background: var(--gold); color: #05080f; border-color: var(--gold); outline: none; }
+
+    .alpha-section { margin-bottom: 22px; }
+
+    .alpha-heading {
+      font-family: var(--font-d);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--gold);
+      opacity: .3;
+      margin-bottom: 8px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid var(--border);
+      scroll-margin-top: 76px;
+    }
+
+    /* ── ENTRY CARDS ──────────────────────── */
+    .entry-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 15px;
+      margin-bottom: 9px;
+      cursor: pointer;
+      transition: border-color .2s, background .2s, transform .15s;
+      display: block;
+      text-decoration: none;
+    }
+
+    .entry-card:active { transform: scale(.985); }
+    .entry-card:hover  { border-color: var(--gold-dim); background: var(--surface2); }
+
+    .entry-card-title {
+      font-family: var(--font-d);
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+      line-height: 1.25;
+    }
+
+    .entry-card-preview {
+      font-size: .84rem;
+      color: var(--text-dim);
+      line-height: 1.55;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .entry-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      font-size: .68rem;
+      padding: 3px 7px;
+      border-radius: 4px;
+      background: rgba(201,168,76,.1);
+      color: var(--gold);
+      border: 1px solid rgba(201,168,76,.2);
+      font-weight: 600;
+      letter-spacing: .04em;
+    }
+
+    .entry-date {
+      font-size: .68rem;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+
+    /* ── ATTACHMENT ───────────────────────── */
+    .attach-section { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); }
+
+    .attach-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 13px;
+      background: var(--surface2);
+      border-radius: 9px;
+      margin-bottom: 7px;
+      text-decoration: none;
+      color: var(--text);
+      transition: background .15s;
+    }
+
+    .attach-item:hover { background: var(--border); }
+    .attach-icon { font-size: 1.3rem; flex-shrink: 0; }
+    .attach-name { flex: 1; font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ── SEARCH ───────────────────────────── */
+    .search-wrap {
+      position: relative;
+      margin-bottom: 18px;
+    }
+
+    .search-wrap input { padding-left: 44px; font-size: 1rem; }
+
+    .search-ico {
+      position: absolute;
+      left: 14px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+      display: flex;
+    }
+
+    mark {
+      background: rgba(201,168,76,.22);
+      color: var(--gold);
+      border-radius: 2px;
+      padding: 0 2px;
+    }
+
+    /* ── TAGS INPUT ───────────────────────── */
+    .tags-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: var(--bg);
+      min-height: 46px;
+      align-items: center;
+      cursor: text;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    .tags-wrap:focus-within {
+      border-color: var(--gold-dim);
+      box-shadow: 0 0 0 3px rgba(201,168,76,.08);
+    }
+
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(201,168,76,.12);
+      border: 1px solid rgba(201,168,76,.28);
+      color: var(--gold);
+      border-radius: 5px;
+      padding: 3px 8px;
+      font-size: .78rem;
+      font-weight: 600;
+    }
+
+    .tag-chip button {
+      background: none;
+      border: none;
+      color: var(--gold);
+      cursor: pointer;
+      padding: 0 0 1px;
+      font-size: 1rem;
+      line-height: 1;
+      opacity: .7;
+    }
+
+    .tag-chip button:hover { opacity: 1; }
+
+    .tag-inner {
+      flex: 1;
+      min-width: 90px;
+      border: none;
+      background: none;
+      color: var(--text);
+      font-size: .9rem;
+      outline: none;
+      padding: 4px 4px;
+      box-shadow: none !important;
+    }
+
+    /* ── FILE DROP ────────────────────────── */
+    .file-drop {
+      border: 2px dashed var(--border);
+      border-radius: 9px;
+      padding: 22px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      color: var(--text-muted);
+      font-size: .84rem;
+    }
+
+    .file-drop:hover { border-color: var(--gold-dim); background: rgba(201,168,76,.03); color: var(--text-dim); }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 11px;
+      background: var(--surface2);
+      border-radius: 7px;
+      margin-top: 7px;
+      font-size: .85rem;
+    }
+
+    .file-rm { margin-left: auto; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; padding: 0 3px; }
+    .file-rm:hover { color: var(--danger); }
+
+    /* ── SETTINGS ─────────────────────────── */
+    .settings-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .settings-label {
+      padding: 11px 15px;
+      font-size: .68rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .settings-row {
+      padding: 14px 15px;
+      border-bottom: 1px solid var(--border);
+      font-size: .9rem;
+    }
+
+    .settings-row:last-child { border-bottom: none; }
+
+    /* ── INVITE BOX ───────────────────────── */
+    .invite-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      word-break: break-all;
+      font-size: .76rem;
+      color: var(--text-dim);
+      margin: 10px 0;
+      font-family: 'Courier New', monospace;
+      line-height: 1.5;
+    }
+
+    /* ── ALERTS ───────────────────────────── */
+    .alert {
+      padding: 11px 14px;
+      border-radius: 8px;
+      font-size: .84rem;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    .alert-error   { background: rgba(224,85,85,.1);  color: #f09090; border: 1px solid rgba(224,85,85,.2); }
+    .alert-success { background: rgba(76,175,125,.1); color: #7dcfa0; border: 1px solid rgba(76,175,125,.2); }
+    .alert-info    { background: rgba(74,158,255,.1); color: #85b9ff; border: 1px solid rgba(74,158,255,.2); }
+
+    /* ── LOADING / EMPTY ──────────────────── */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 44px;
+      color: var(--text-muted);
+      font-size: .88rem;
+      gap: 10px;
+    }
+
+    .spinner {
+      width: 22px; height: 22px;
+      border: 2px solid var(--border);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin .75s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .empty-ico { font-size: 2.8rem; margin-bottom: 10px; opacity: .4; }
+    .empty-txt { color: var(--text-muted); font-size: .88rem; line-height: 1.7; }
+    .empty-txt strong { color: var(--text-dim); }
+
+    /* ── DETAIL VIEW ──────────────────────── */
+    .detail-date {
+      font-size: .72rem;
+      color: var(--text-muted);
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .detail-title {
+      font-family: var(--font-d);
+      font-size: 2rem;
+      font-weight: 600;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+
+    .detail-content {
+      font-size: .95rem;
+      line-height: 1.85;
+      color: var(--text);
+      white-space: pre-wrap;
+      margin-bottom: 20px;
+    }
+
+    .detail-actions {
+      display: flex;
+      gap: 8px;
+      float: right;
+    }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+    /* ── SCROLLBAR ────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     AUTH VIEW
+════════════════════════════════════════════════ -->
+<div id="auth-view">
+  <div class="auth-wordmark">STELLARHAUS</div>
+  <div class="auth-sub">Our Shared Archive</div>
+
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">Sign In</button>
+      <button class="auth-tab"        onclick="switchTab('register')">Join</button>
+    </div>
+
+    <div id="auth-msg"></div>
+
+    <!-- LOGIN -->
+    <div id="login-form">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="l-email" placeholder="your@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="l-pw" placeholder="••••••••" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter') doLogin()">
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">Enter Archive</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="register-form" style="display:none">
+      <div class="form-group">
+        <label>Your Name</label>
+        <input type="text" id="r-name" placeholder="e.g. Kevin">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="r-email" placeholder="your@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Password (min 8 chars)</label>
+        <input type="password" id="r-pw" placeholder="••••••••" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>Invite Code</label>
+        <input type="text" id="r-invite" placeholder="Paste invite code here">
+      </div>
+      <button class="btn btn-primary" onclick="doRegister()">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MAIN APP
+════════════════════════════════════════════════ -->
+<div id="main-app" style="display:none">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo" onclick="showView('encyclopedia')">STELLAR<span>HAUS</span></div>
+    <div class="header-right">
+      <button class="icon-btn" onclick="showView('search')" title="Search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </button>
+      <button class="icon-btn" onclick="showView('settings'); loadSettings()" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <div class="main-content">
+
+    <!-- ── ENCYCLOPEDIA ───────────────────── -->
+    <div id="view-encyclopedia" class="view active">
+      <div class="page-header">
+        <div class="page-title">Archive</div>
+      </div>
+      <div class="alpha-strip" id="alpha-strip"></div>
+      <div id="enc-body">
+        <div class="loading"><div class="spinner"></div> Loading...</div>
+      </div>
+    </div>
+
+    <!-- ── SEARCH ─────────────────────────── -->
+    <div id="view-search" class="view">
+      <div class="page-header">
+        <div class="page-title">Search</div>
+      </div>
+      <div class="search-wrap">
+        <div class="search-ico">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+        </div>
+        <input type="search" id="search-input" placeholder="Search titles, content, tags…" oninput="debounceSearch()">
+      </div>
+      <div id="search-results"></div>
+    </div>
+
+    <!-- ── EDITOR ─────────────────────────── -->
+    <div id="view-editor" class="view">
+      <button class="back-btn" onclick="goBack()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="15,18 9,12 15,6"/>
+        </svg>
+        Back
+      </button>
+
+      <div class="page-header">
+        <div class="page-title" id="editor-heading">New Entry</div>
+      </div>
+
+      <div id="editor-msg"></div>
+
+      <div class="form-group">
+        <label>Title *</label>
+        <input type="text" id="e-title" placeholder="Entry title (used for alphabetical sorting)">
+      </div>
+
+      <div class="form-group">
+        <label>Content</label>
+        <textarea id="e-content" rows="9" placeholder="Write the full content of this encyclopedia entry. This text is searchable."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Tags — press Enter or comma to add</label>
+        <div class="tags-wrap" onclick="document.getElementById('tag-in').focus()">
+          <div id="tag-chips"></div>
+          <input class="tag-inner" id="tag-in" type="text" placeholder="Add tag…"
+            onkeydown="handleTag(event)">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Attach Files (PDF, images, docs)</label>
+        <div class="file-drop" onclick="document.getElementById('file-in').click()">
+          <div style="font-size:1.6rem;margin-bottom:4px">📎</div>
+          Tap to attach files
+        </div>
+        <input type="file" id="file-in" multiple style="display:none" onchange="pickFiles(event)">
+        <div id="file-list"></div>
+      </div>
+
+      <button class="btn btn-primary" id="save-btn" onclick="saveEntry()">Save Entry</button>
+      <button class="btn btn-danger"  id="del-btn"  onclick="deleteEntry()" style="display:none">Delete This Entry</button>
+      <div style="height:10px"></div>
+    </div>
+
+    <!-- ── DETAIL ──────────────────────────── -->
+    <div id="view-detail" class="view">
+      <button class="back-btn" onclick="goBack()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="15,18 9,12 15,6"/>
+        </svg>
+        Archive
+      </button>
+      <div id="detail-body"></div>
+    </div>
+
+    <!-- ── SETTINGS ────────────────────────── -->
+    <div id="view-settings" class="view">
+      <div class="page-header">
+        <div class="page-title">Settings</div>
+      </div>
+
+      <div class="settings-block">
+        <div class="settings-label">Account</div>
+        <div class="settings-row">
+          <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:2px">Signed in as</div>
+          <div id="s-email" style="font-weight:500"></div>
+        </div>
+        <div class="settings-row">
+          <button class="btn btn-secondary" onclick="doSignOut()" style="width:auto;padding:9px 18px">Sign Out</button>
+        </div>
+      </div>
+
+      <div class="settings-block">
+        <div class="settings-label">Invite Your Partner</div>
+        <div class="settings-row">
+          <p style="font-size:.84rem;color:var(--text-dim);margin-bottom:12px;line-height:1.6">
+            Generate a one-time invite link (expires in 7 days). Share it with your partner so they can create their account.
+          </p>
+          <button class="btn btn-secondary" onclick="genInvite()" style="width:auto;padding:10px 18px">✨ Generate Invite Link</button>
+          <div id="invite-out"></div>
+        </div>
+      </div>
+
+      <div class="settings-block">
+        <div class="settings-label">Archive Stats</div>
+        <div class="settings-row" id="s-stats">
+          <div class="loading" style="padding:8px"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-encyclopedia" onclick="showView('encyclopedia')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      </svg>
+      Archive
+    </button>
+    <button class="nav-item" id="nav-search" onclick="showView('search'); setTimeout(()=>document.getElementById('search-input').focus(),100)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      Search
+    </button>
+    <button class="nav-item" id="nav-new" onclick="newEntry()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="16"/>
+        <line x1="8" y1="12" x2="16" y2="12"/>
+      </svg>
+      New
+    </button>
+    <button class="nav-item" id="nav-settings" onclick="showView('settings'); loadSettings()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      Settings
+    </button>
+  </nav>
+</div><!-- /main-app -->
+
+<script>
+/* ═══════════════════════════════════════════════
+   ⚙️  CONFIGURATION  — update these two values
+   Get these from: Supabase Dashboard > Settings > API
+═══════════════════════════════════════════════ */
+const SUPABASE_URL      = 'https://ugkttajdfiefibnpltfw.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVna3R0YWpkZmllZmlibnBsdGZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxODQwMDgsImV4cCI6MjA5MDc2MDAwOH0.aEzqrw6ybWg82rvTJjUtieiS_EP_bTIKJqNLFwa4Qq4';
+
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let user       = null;
+let curView    = 'encyclopedia';
+let prevView   = null;
+let editId     = null;
+let curTags    = [];
+let pendFiles  = [];
+let allEntries = [];
+let srchTimer  = null;
+
+// Pre-fill invite code from URL
+const qp = new URLSearchParams(location.search);
+if (qp.get('invite')) {
+  switchTab('register');
+  document.getElementById('r-invite').value = qp.get('invite');
+}
+
+// Auth listener
+db.auth.onAuthStateChange((_evt, sess) => {
+  user = sess?.user || null;
+  if (user) {
+    document.getElementById('auth-view').style.display  = 'none';
+    document.getElementById('main-app').style.display   = 'block';
+    loadEncyclopedia();
+  } else {
+    document.getElementById('auth-view').style.display  = '';
+    document.getElementById('main-app').style.display   = 'none';
+  }
+});
+
+/* ═══════════════════════════════════════════════
+   AUTH
+═══════════════════════════════════════════════ */
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t, i) => {
+    t.classList.toggle('active', (i===0 && tab==='login') || (i===1 && tab==='register'));
+  });
+  document.getElementById('login-form').style.display    = tab==='login'    ? '' : 'none';
+  document.getElementById('register-form').style.display = tab==='register' ? '' : 'none';
+  document.getElementById('auth-msg').innerHTML = '';
+}
+
+function authMsg(txt, type='error') {
+  document.getElementById('auth-msg').innerHTML = `<div class="alert alert-${type}">${txt}</div>`;
+}
+
+async function doLogin() {
+  const email = v('l-email'), pw = v('l-pw');
+  if (!email||!pw) return authMsg('Please fill in all fields.');
+  const { error } = await db.auth.signInWithPassword({ email, password: pw });
+  if (error) authMsg(error.message);
+}
+
+async function doRegister() {
+  const name   = v('r-name').trim();
+  const email  = v('r-email').trim();
+  const pw     = v('r-pw');
+  const invite = v('r-invite').trim();
+
+  if (!name||!email||!pw||!invite) return authMsg('All fields are required.');
+  if (pw.length < 8) return authMsg('Password must be at least 8 characters.');
+
+  // Validate invite token
+  const { data: tok, error: tErr } = await db
+    .from('invite_tokens')
+    .select('*')
+    .eq('token', invite)
+    .is('used_by', null)
+    .maybeSingle();
+
+  if (tErr || !tok) return authMsg('Invalid or already-used invite code.');
+  if (tok.expires_at && new Date(tok.expires_at) < new Date())
+    return authMsg('This invite link has expired. Ask for a new one.');
+
+  const { data, error } = await db.auth.signUp({
+    email, password: pw,
+    options: { data: { display_name: name } }
+  });
+  if (error) return authMsg(error.message);
+
+  // Mark token used
+  await db.from('invite_tokens')
+    .update({ used_by: data.user.id, used_at: new Date().toISOString() })
+    .eq('id', tok.id);
+
+  authMsg('Welcome to STELLARHAUS! Your account is ready.', 'success');
+}
+
+async function doSignOut() {
+  await db.auth.signOut();
+}
+
+/* ═══════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════ */
+function showView(name) {
+  prevView = curView;
+  curView  = name;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const ni = document.getElementById('nav-'+name);
+  if (ni) ni.classList.add('active');
+}
+
+function goBack() { showView(prevView || 'encyclopedia'); }
+
+/* ═══════════════════════════════════════════════
+   ENCYCLOPEDIA
+═══════════════════════════════════════════════ */
+async function loadEncyclopedia() {
+  const { data, error } = await db
+    .from('entries')
+    .select('id,title,content,tags,created_at,created_by')
+    .order('title', { ascending: true });
+
+  if (error) {
+    setHtml('enc-body', `<div class="alert alert-error">Error: ${esc(error.message)}</div>`);
+    return;
+  }
+
+  allEntries = data || [];
+  renderEncyclopedia(allEntries);
+}
+
+function renderEncyclopedia(entries) {
+  const strip = document.getElementById('alpha-strip');
+  const body  = document.getElementById('enc-body');
+
+  if (!entries.length) {
+    strip.innerHTML = '';
+    setHtml('enc-body', `
+      <div class="empty-state">
+        <div class="empty-ico">📖</div>
+        <div class="empty-txt">Your archive is empty.<br>Tap <strong>New</strong> to add your first entry.</div>
+      </div>`);
+    return;
+  }
+
+  // Group by first letter
+  const grouped = {};
+  entries.forEach(e => {
+    const ch = e.title.charAt(0).toUpperCase();
+    const key = /[A-Z]/.test(ch) ? ch : '#';
+    (grouped[key] = grouped[key]||[]).push(e);
+  });
+
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const has     = new Set(Object.keys(grouped));
+
+  strip.innerHTML = letters.map(l =>
+    `<button class="alpha-btn${has.has(l)?' has':''}"
+       onclick="${has.has(l)?`scrollTo('${l}')`:''}"
+       ${!has.has(l)?'disabled style="cursor:default;opacity:.25"':''}>${l}</button>`
+  ).join('') + (has.has('#')
+    ? `<button class="alpha-btn has" onclick="scrollTo('#')">#</button>` : '');
+
+  const sorted = Object.keys(grouped).sort((a,b) => a==='#'?1:a.localeCompare(b));
+
+  body.innerHTML = sorted.map(letter => `
+    <div class="alpha-section" id="sec-${letter}">
+      <div class="alpha-heading">${letter}</div>
+      ${grouped[letter].map(e => cardHtml(e)).join('')}
+    </div>`).join('');
+}
+
+function cardHtml(e) {
+  const preview = e.content ? e.content.substring(0,120)+(e.content.length>120?'…':'') : '';
+  const tags    = (e.tags||[]).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join('');
+  const date    = new Date(e.created_at).toLocaleDateString();
+  return `
+    <div class="entry-card" onclick="openEntry('${e.id}')">
+      <div class="entry-card-title">${esc(e.title)}</div>
+      ${preview?`<div class="entry-card-preview">${esc(preview)}</div>`:''}
+      <div class="entry-card-meta">${tags}<span class="entry-date">${date}</span></div>
+    </div>`;
+}
+
+function scrollTo(letter) {
+  const sec = document.getElementById('sec-'+letter);
+  if (sec) sec.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+/* ═══════════════════════════════════════════════
+   ENTRY DETAIL
+═══════════════════════════════════════════════ */
+async function openEntry(id) {
+  showView('detail');
+  setHtml('detail-body', `<div class="loading"><div class="spinner"></div> Loading entry…</div>`);
+
+  const { data: e, error } = await db.from('entries').select('*').eq('id',id).single();
+  if (error||!e) {
+    setHtml('detail-body', `<div class="alert alert-error">Entry not found.</div>`);
+    return;
+  }
+
+  editId = id;
+  const isOwner    = e.created_by === user.id;
+  const tags       = (e.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('');
+  const attachments = Array.isArray(e.attachments) ? e.attachments : [];
+  const date       = new Date(e.created_at).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+  setHtml('detail-body', `
+    ${isOwner?`
+    <div class="detail-actions">
+      <button class="icon-btn" onclick="startEdit('${id}')" title="Edit entry">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </button>
+    </div>`:''}
+    <div class="detail-date">${date}</div>
+    <div class="detail-title">${esc(e.title)}</div>
+    ${tags?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;clear:both">${tags}</div>`:'<div style="clear:both"></div>'}
+    ${e.content?`<div class="detail-content">${esc(e.content)}</div>`:''}
+    ${attachments.length?`
+      <div class="attach-section">
+        <div style="font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px">Attachments</div>
+        ${attachments.map(a=>`
+          <a href="${a.url}" target="_blank" rel="noopener" class="attach-item">
+            <span class="attach-icon">${fileIcon(a.name)}</span>
+            <span class="attach-name">${esc(a.name)}</span>
+            <span style="color:var(--text-muted);font-size:.8rem">↗</span>
+          </a>`).join('')}
+      </div>`:''}
+  `);
+}
+
+/* ═══════════════════════════════════════════════
+   EDITOR
+═══════════════════════════════════════════════ */
+function newEntry() {
+  editId = null;
+  curTags = []; pendFiles = [];
+  setVal('e-title',''); setVal('e-content','');
+  setHtml('tag-chips',''); setVal('tag-in','');
+  setHtml('file-list',''); setHtml('editor-msg','');
+  document.getElementById('editor-heading').textContent = 'New Entry';
+  document.getElementById('save-btn').textContent = 'Save Entry';
+  document.getElementById('del-btn').style.display = 'none';
+  showView('editor');
+}
+
+async function startEdit(id) {
+  showView('editor');
+  editId = id;
+  curTags = []; pendFiles = [];
+  setHtml('editor-msg','');
+  document.getElementById('editor-heading').textContent = 'Edit Entry';
+  document.getElementById('save-btn').textContent = 'Update Entry';
+  document.getElementById('del-btn').style.display = '';
+
+  const { data: e } = await db.from('entries').select('*').eq('id',id).single();
+  if (!e) return;
+
+  setVal('e-title', e.title||'');
+  setVal('e-content', e.content||'');
+  curTags = Array.isArray(e.tags) ? [...e.tags] : [];
+  renderChips();
+
+  const attachments = Array.isArray(e.attachments) ? e.attachments : [];
+  document.getElementById('file-list').innerHTML = attachments.map(a=>`
+    <div class="file-item">
+      <span>${fileIcon(a.name)}</span>
+      <span>${esc(a.name)}</span>
+      <span style="margin-left:auto;font-size:.72rem;color:var(--text-muted)">saved</span>
+    </div>`).join('');
+}
+
+function handleTag(e) {
+  if (e.key==='Enter'||e.key===',') {
+    e.preventDefault();
+    const val = document.getElementById('tag-in').value.trim().replace(/,/g,'');
+    if (val && !curTags.includes(val)) { curTags.push(val); renderChips(); }
+    setVal('tag-in','');
+  }
+}
+
+function removeTag(t) { curTags = curTags.filter(x=>x!==t); renderChips(); }
+
+function renderChips() {
+  setHtml('tag-chips', curTags.map(t=>
+    `<span class="tag-chip">${esc(t)}<button type="button" onclick="removeTag('${esc(t)}')">×</button></span>`
+  ).join(''));
+}
+
+function pickFiles(e) {
+  pendFiles.push(...Array.from(e.target.files));
+  renderFileList();
+}
+
+function renderFileList() {
+  setHtml('file-list', pendFiles.map((f,i)=>`
+    <div class="file-item">
+      <span>${fileIcon(f.name)}</span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</span>
+      <span style="font-size:.72rem;color:var(--text-muted)">${fmtBytes(f.size)}</span>
+      <button class="file-rm" onclick="dropFile(${i})">✕</button>
+    </div>`).join(''));
+}
+
+function dropFile(i) { pendFiles.splice(i,1); renderFileList(); }
+
+async function saveEntry() {
+  const title   = v('e-title').trim();
+  const content = v('e-content').trim();
+  if (!title) {
+    setHtml('editor-msg', `<div class="alert alert-error">Title is required.</div>`);
+    return;
+  }
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  setHtml('editor-msg','');
+
+  // Upload pending files
+  const uploaded = [];
+  for (const f of pendFiles) {
+    const path = `${user.id}/${Date.now()}_${f.name}`;
+    const { error: upErr } = await db.storage.from('attachments').upload(path, f);
+    if (!upErr) {
+      const { data: pd } = db.storage.from('attachments').getPublicUrl(path);
+      uploaded.push({ name: f.name, url: pd.publicUrl, path });
+    }
+  }
+
+  let error;
+  if (editId) {
+    const { data: ex } = await db.from('entries').select('attachments').eq('id',editId).single();
+    const existing = Array.isArray(ex?.attachments) ? ex.attachments : [];
+    ({ error } = await db.from('entries').update({
+      title, content, tags: curTags,
+      attachments: [...existing, ...uploaded],
+      updated_at: new Date().toISOString()
+    }).eq('id', editId));
+  } else {
+    ({ error } = await db.from('entries').insert({
+      title, content, tags: curTags,
+      attachments: uploaded,
+      created_by: user.id
+    }));
+  }
+
+  btn.disabled = false;
+  btn.textContent = editId ? 'Update Entry' : 'Save Entry';
+
+  if (error) {
+    setHtml('editor-msg', `<div class="alert alert-error">Save failed: ${esc(error.message)}</div>`);
+  } else {
+    await loadEncyclopedia();
+    showView('encyclopedia');
+  }
+}
+
+async function deleteEntry() {
+  if (!editId || !confirm('Permanently delete this entry?')) return;
+  await db.from('entries').delete().eq('id', editId);
+  await loadEncyclopedia();
+  showView('encyclopedia');
+}
+
+/* ═══════════════════════════════════════════════
+   SEARCH
+═══════════════════════════════════════════════ */
+function debounceSearch() {
+  clearTimeout(srchTimer);
+  srchTimer = setTimeout(doSearch, 300);
+}
+
+async function doSearch() {
+  const q = document.getElementById('search-input').value.trim();
+  if (!q) { setHtml('search-results',''); return; }
+
+  setHtml('search-results', `<div class="loading"><div class="spinner"></div> Searching…</div>`);
+
+  // Search using ilike (simple but effective)
+  const { data: results, error } = await db
+    .from('entries')
+    .select('*')
+    .or(`title.ilike.%${q}%,content.ilike.%${q}%`)
+    .order('title', { ascending: true });
+
+  renderSearch(results || [], q);
+}
+
+function renderSearch(results, q) {
+  if (!results.length) {
+    setHtml('search-results', `
+      <div class="empty-state">
+        <div class="empty-ico">🔍</div>
+        <div class="empty-txt">No results for <strong>"${esc(q)}"</strong></div>
+      </div>`);
+    return;
+  }
+
+  setHtml('search-results', `
+    <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:12px">
+      ${results.length} result${results.length!==1?'s':''} found
+    </div>
+    ${results.map(e => {
+      const preview = hlText(e.content ? e.content.substring(0,160)+(e.content.length>160?'…':'') : '', q);
+      const title   = hlText(e.title, q);
+      const tags    = (e.tags||[]).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join('');
+      return `
+        <div class="entry-card" onclick="openEntry('${e.id}')">
+          <div class="entry-card-title">${title}</div>
+          ${preview?`<div class="entry-card-preview">${preview}</div>`:''}
+          <div class="entry-card-meta">${tags}</div>
+        </div>`;
+    }).join('')}`);
+}
+
+function hlText(text, q) {
+  if (!text||!q) return esc(text||'');
+  const escaped = esc(text);
+  const safePat = q.trim().replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return escaped.replace(new RegExp(`(${safePat})`, 'gi'), '<mark>$1</mark>');
+}
+
+/* ═══════════════════════════════════════════════
+   SETTINGS
+═══════════════════════════════════════════════ */
+async function loadSettings() {
+  const { data: { user: u } } = await db.auth.getUser();
+  setHtml('s-email', u?.email || '—');
+
+  const { count } = await db.from('entries').select('*', { count:'exact', head:true });
+  setHtml('s-stats', `
+    <div style="display:flex;gap:24px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:1.4rem;font-family:var(--font-d);font-weight:700;color:var(--gold)">${count||0}</div>
+        <div style="font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em">Total Entries</div>
+      </div>
+    </div>`);
+}
+
+async function genInvite() {
+  const token     = crypto.randomUUID().replace(/-/g,'').substring(0,18);
+  const expiresAt = new Date(Date.now() + 7*24*60*60*1000).toISOString();
+
+  const { error } = await db.from('invite_tokens').insert({
+    token, created_by: user.id, expires_at: expiresAt
+  });
+
+  if (error) {
+    setHtml('invite-out', `<div class="alert alert-error" style="margin-top:12px">${esc(error.message)}</div>`);
+    return;
+  }
+
+  const url = `${location.origin}${location.pathname}?invite=${token}`;
+  setHtml('invite-out', `
+    <div style="margin-top:12px">
+      <div style="font-size:.75rem;color:var(--text-dim);margin-bottom:6px">Share this link — expires in 7 days:</div>
+      <div class="invite-box">${esc(url)}</div>
+      <button class="btn btn-secondary" onclick="copyLink('${esc(url)}')" style="width:auto;padding:9px 18px">📋 Copy Link</button>
+      <div style="font-size:.74rem;color:var(--text-muted);margin-top:8px">⚠️ Single-use only.</div>
+    </div>`);
+}
+
+async function copyLink(url) {
+  try {
+    await navigator.clipboard.writeText(url);
+    event.target.textContent = '✓ Copied!';
+    setTimeout(() => event.target.textContent = '📋 Copy Link', 2500);
+  } catch {}
+}
+
+/* ═══════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════ */
+function esc(s) {
+  const d = document.createElement('div');
+  d.appendChild(document.createTextNode(s||''));
+  return d.innerHTML;
+}
+
+function v(id)       { return document.getElementById(id).value; }
+function setVal(id,v) { document.getElementById(id).value = v; }
+function setHtml(id,h) { document.getElementById(id).innerHTML = h; }
+
+function fmtBytes(b) {
+  if (b<1024) return b+' B';
+  if (b<1048576) return (b/1024).toFixed(1)+' KB';
+  return (b/1048576).toFixed(1)+' MB';
+}
+
+function fileIcon(name) {
+  const ext = (name||'').split('.').pop().toLowerCase();
+  if (ext==='pdf')                                  return '📄';
+  if (['jpg','jpeg','png','gif','webp','svg'].includes(ext)) return '🖼️';
+  if (['doc','docx'].includes(ext))                 return '📝';
+  if (['xls','xlsx','csv'].includes(ext))           return '📊';
+  if (['mp4','mov','avi','mkv'].includes(ext))      return '🎬';
+  if (['mp3','m4a','wav','ogg'].includes(ext))      return '🎵';
+  return '📎';
+}
+</script>
+
+
+</body>
+</html>
