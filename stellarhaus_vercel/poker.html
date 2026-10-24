@@ -386,6 +386,19 @@ input[type=range] { width: 100%; accent-color: var(--gold); height: 28px; }
   .dbtn { width: 22px; height: 22px; font-size: .7rem; }
   .mk { font-size: .55rem; height: 16px; min-width: 16px; }
   .seat.me .nm::after { content: ''; }
+  .stage { --pod: min(31vw, 124px) !important; }
+  .pod .nm { overflow: visible; text-overflow: clip; font-size: .66rem; }
+  .pod .nm .flag { font-size: .8em; margin-right: 2px; }
+  .topstrip { padding: 5px 10px; gap: 6px; }
+  .ts-pay { font-size: .64rem; padding: 3px 8px; }
+  .ts-p { font-size: .7rem; }
+  .myhand .x { font-size: .72rem; line-height: 1.3; }
+  .abtn { min-height: 48px; }
+  .presets button { min-height: 32px; }
+  input[type=range] { height: 34px; }
+  .cam { inset: 12% 2% auto; padding: 10px 8px; }
+  .coach { font-size: .72rem; padding: 5px 8px; line-height: 1.3; }
+  .dock { gap: 6px; }
 }
 /* Character avatars: Dwan's cannon, Hellmuth's stove, Negreanu's chatterbox */
 .avatar.ico-av, .mini.ico-av { background: radial-gradient(circle at 38% 32%, #2b3342, #0b0e14 75%); padding: 2px; overflow: visible; }
@@ -671,7 +684,7 @@ function fxPulse(id, cls, ms) {
 const fxOn = (id, cls) => (S.fx[id + ':' + cls] || 0) > Date.now();
 const POS = {
   land: { seat: [[50, 86], [10, 56], [24, 13], [76, 13], [90, 56]], bet: [[50, 67], [25, 57], [34, 33], [66, 33], [75, 57]], d: [[61, 72], [19, 43], [35, 23], [65, 23], [81, 43]] },
-  port: { seat: [[50, 89], [15, 66], [21, 15], [79, 15], [85, 66]], bet: [[50, 74], [27, 56], [30, 31], [70, 31], [73, 56]], d: [[64, 78], [22, 54], [37, 25], [63, 25], [78, 54]] },
+  port: { seat: [[50, 89], [17, 64], [22, 14], [78, 14], [83, 64]], bet: [[50, 74], [27, 56], [30, 31], [70, 31], [73, 56]], d: [[64, 78], [22, 54], [37, 25], [63, 25], [78, 54]] },
 };
 
 /* ── Small utils ──────────────────────────────────────────── */
@@ -1578,7 +1591,9 @@ function nextAnn() {
 function layout() {
   const st = $('stage'); if (!st) return;
   const r = st.getBoundingClientRect(); if (!r.width) return;
-  const port = r.height > r.width * 1.02;
+  const phone = window.innerWidth < 640;
+  const port = phone || r.height > r.width * 1.02;
+  S.phone = phone;
   st.classList.toggle('port', port);
   const bc = port ? Math.min(r.width * 0.15, r.height * 0.085, 64) : Math.min(r.width * 0.062, r.height * 0.13, 78);
   st.style.setProperty('--bc', Math.max(30, bc) + 'px');
@@ -1629,7 +1644,7 @@ function flashTitle() {
 function renderTop(v) {
   const live = v.players.filter(p => !p.out).sort((a, b) => b.stack - a.stack);
   const out = v.players.filter(p => p.out).sort((a, b) => a.place - b.place);
-  $('topstrip').innerHTML = `<span class="ts-pay">1st place · ${W.money(v.payouts[0])} · winner take all</span>` +
+  $('topstrip').innerHTML = `<span class="ts-pay">${S.phone ? '1st · $10M · winner take all' : '1st place · ' + W.money(v.payouts[0]) + ' · winner take all'}</span>` +
     live.map((p, i) => `<span class="ts-p"><span class="rk">${i + 1}</span>${miniHTML(p.id)}${FLAGS[p.id] || ''} ${esc(SHORT[p.id])} <b>${fmt(p.stack)}</b></span>`).join('') +
     out.map(p => `<span class="ts-p out"><span class="rk">${W.ordinal(p.place)}</span>${miniHTML(p.id)}${esc(SHORT[p.id])}</span>`).join('');
 }
@@ -1707,7 +1722,7 @@ function renderSeats(v) {
       fxOn(p.id, 'talking') || (acting && p.id === 'negreanu') ? 'talking' : ''].filter(Boolean).join(' ');
     const html = `${mood}<div class="hole">${hole}</div>
       <div class="pod"><div class="markers">${markers}</div>${avatarHTML(p.id, avc)}
-      <div class="info"><div class="nm"><span class="flag">${FLAGS[p.id] || ''}</span>${esc(S.port ? SHORT[p.id] : p.name)}${auto}</div><div class="stk">${p.out ? '—' : fmt(p.stack)}<small>${p.out ? '' : Math.round(p.stack / bb) + ' BB'}</small></div></div></div>
+      <div class="info"><div class="nm"><span class="flag">${FLAGS[p.id] || ''}</span>${esc(S.port || S.phone ? SHORT[p.id] : p.name)}${auto}</div><div class="stk">${p.out ? '—' : fmt(p.stack)}<small>${p.out ? '' : Math.round(p.stack / bb) + ' BB'}</small></div></div></div>
       <div class="timer"><i id="tm-${i}"></i></div>${eq}
       <div class="tag ${tagCls}">${esc(tag || '')}</div>${hn}`;
     // Rebuild only on change so avatar animations aren't restarted by every state update.
