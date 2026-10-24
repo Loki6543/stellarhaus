@@ -24,7 +24,7 @@ const LEVELS = [
 ].map(([sb, bb], i) => ({ n: i + 1, sb, bb, ante: bb }));
 
 // Fictional 2027 Main Event final-five payouts.
-const PAYOUTS = [12000000, 7000000, 4700000, 3500000, 2800000];
+const PAYOUTS = [10000000, 0, 0, 0, 0];   // winner takes all
 
 const rank = c => c >> 2;
 const suit = c => c & 3;
@@ -220,7 +220,7 @@ function dealStacks(botIds) {
   const s2 = roundUnit(randBetween(126e6, 150e6));
   const s3 = roundUnit(s2 * randBetween(0.91, 0.97));
   const s4 = roundUnit(randBetween(72e6, 95e6));
-  const s5 = roundUnit(Math.min(randBetween(34e6, 52e6), s4 - 12e6));
+  const s5 = roundUnit(Math.min(randBetween(52e6, 62e6), s4 - 10e6));
   return { [order[0]]: s1, [order[1]]: s2, firo: s3, [order[2]]: s4, kevin: s5 };
 }
 
@@ -652,8 +652,8 @@ function settle(G) {
       const p = busted[k];
       p.out = true; p.place = places[places.length - 1]; p.prize = prize;
       G.results.push({ id: p.id, name: p.name, place: p.place, prize: p.prize, hand: G.handNo });
-      log(G, 'bust', `${p.name} is eliminated in ${ordinal(p.place)} place and collects ${money(p.prize)}.`,
-        { who: p.id, ann: { type: 'bust', title: `${p.name.toUpperCase()} ELIMINATED`, sub: `${ordinal(p.place).toUpperCase()} PLACE · ${money(p.prize)}` } });
+      log(G, 'bust', `${p.name} is eliminated in ${ordinal(p.place)} place${p.prize ? ' and collects ' + money(p.prize) : ''}.`,
+        { who: p.id, ann: { type: 'bust', title: `${p.name.toUpperCase()} ELIMINATED`, sub: `${ordinal(p.place).toUpperCase()} PLACE${p.prize ? ' · ' + money(p.prize) : ''}` } });
     }
     i = j + 1;
   }
@@ -664,7 +664,7 @@ function settle(G) {
     for (let k = order.length - 1; k >= 1; k--) {
       const p = order[k]; p.out = true; p.place = k + 1; p.prize = G.payouts[k];
       G.results.push({ id: p.id, name: p.name, place: p.place, prize: p.prize, hand: G.handNo });
-      log(G, 'bust', `${p.name} finishes ${ordinal(p.place)} on chips and collects ${money(p.prize)}.`, { who: p.id });
+      log(G, 'bust', `${p.name} finishes ${ordinal(p.place)} on chips.`, { who: p.id });
     }
     left = [order[0]];
   }
