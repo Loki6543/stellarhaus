@@ -322,6 +322,11 @@ input[type=range] { width: 100%; accent-color: var(--gold); height: 28px; }
 .intro-p p { font-size: .85rem; color: var(--dim); margin-top: 4px; }
 .intro-p .sw b { color: var(--ink); }
 .intro-last { font-family: var(--fs); font-size: 1.4rem; text-align: center; margin: 16px 0; color: var(--gold2); animation: annIn .5s 1.8s both; }
+.le.announcer { color: var(--gold2); font-style: italic; padding: 5px 0; }
+.le.announcer b { font-style: normal; font-family: var(--fd); letter-spacing: .08em; font-weight: 500; }
+.ann.call .t { font-size: clamp(.85rem, 2.4vw, 1.1rem); letter-spacing: .04em; text-transform: none; background: linear-gradient(90deg, transparent, rgba(10,13,18,.92) 8%, rgba(10,13,18,.92) 92%, transparent); color: var(--gold2); font-weight: 500; }
+.ann.call .s { display: none; }
+.coach { font-size: .82rem; color: #ffd27a; background: rgba(255,180,40,.1); border: 1px solid rgba(255,180,40,.35); border-radius: 10px; padding: 7px 10px; }
 .toast { position: fixed; left: 50%; bottom: 120px; transform: translateX(-50%); z-index: 60; background: var(--panel3); border: 1px solid var(--line2); padding: 10px 16px; border-radius: 12px; font-size: .88rem; box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: annIn .3s; max-width: 92vw; text-align: center; }
 .pausebar { position: absolute; inset: 0; z-index: 15; display: grid; place-items: center; text-align: center; padding: 20px; background: rgba(0,0,0,.5); font-family: var(--fd); letter-spacing: .2em; text-transform: uppercase; font-size: clamp(.95rem, 2.6vw, 1.4rem); color: var(--gold2); pointer-events: none; }
 
@@ -462,6 +467,8 @@ input[type=range] { width: 100%; accent-color: var(--gold); height: 28px; }
     </div>
     <div id="host-opts">
       <div class="opts">
+        <label style="grid-column:1/-1" id="ai-ann-row" hidden>Announcer<button type="button" class="btn" id="ai-ann" style="text-transform:none;letter-spacing:.02em">Turn on live Claude commentary</button></label>
+        <label style="grid-column:1/-1">Announcer voice<select id="opt-voice"><option value="0">Text only</option><option value="1">Read calls out loud</option></select></label>
         <label>Shot clock<select id="opt-clock"><option value="30">30 seconds</option><option value="45" selected>45 seconds</option><option value="60">60 seconds</option><option value="90">90 seconds</option></select></label>
         <label>Pace<select id="opt-pace"><option value="1" selected>Broadcast</option><option value="0.55">Fast</option></select></label>
         <label style="grid-column:1/-1">If your partner’s connection drops<select id="opt-absent"><option value="pause" selected>Pause the game until they’re back</option><option value="clock">Their shot clock checks / folds</option><option value="autopilot">Autopilot plays their seat (practice)</option></select></label>
@@ -715,14 +722,14 @@ const S = {
    an inbox document as well. The host's full game is saved privately. */
 const CLAUDE_MODE = !!(window.claude && typeof window.claude.use === 'function');
 const T_META = 'table/meta', T_STATE = 'table/state', T_HOLE = 'table/hole', T_INBOX = 'table/inbox';
-const Cl = { db: null, user: null, room: null, downloads: null, uid: null, canWrite: null, ready: null, writeDenied: false };
+const Cl = { db: null, user: null, room: null, downloads: null, sample: null, uid: null, canWrite: null, ready: null, writeDenied: false };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 function claudeInit() {
   if (!CLAUDE_MODE) return Promise.resolve(false);
   if (!Cl.ready) Cl.ready = (async () => {
     const use = n => window.claude.use(n).catch(() => null);
-    const [db, user, room, dl] = await Promise.all([use('db'), use('user'), use('room'), use('downloads')]);
-    Object.assign(Cl, { db, user, room, downloads: dl });
+    const [db, user, room, dl, sample] = await Promise.all([use('db'), use('user'), use('room'), use('downloads'), use('sample')]);
+    Object.assign(Cl, { db, user, room, downloads: dl, sample });
     if (user) { Cl.uid = await user.id(); Cl.canWrite = await user.can('data.write'); }
     return !!db;
   })();
@@ -837,6 +844,72 @@ function claudeTransport(code, role, onMsg, onStatus) {
     close: () => { subs.forEach(u => { try { u(); } catch (e) { /* gone */ } }); timers.forEach(clearInterval); },
     get ok() { return true; },
   };
+}
+
+/* ═══════════ ANNOUNCER ═══════════
+   Play-by-play on big moments, written by the host for both screens.
+   Built-in lines always work; on Claude the host can switch on live
+   commentary written by Claude (the `sample` capability) from public info only. */
+const CALLS = {
+  allin: ['{a} and {b} are all in — this could change the whole final table!', 'Chips in the middle! {a} versus {b}, and the cards are on their backs.', 'Here we go, all the money is in: {a} against {b}.'],
+  bust: ['And that is it for {a}. What a run at this final table.', '{a} heads to the rail. The field shrinks to {n}.', 'Elimination! {a} is out, and we are down to {n}.'],
+  bigpot: ['{a} drags a monster pot of {amt}! That reshapes the leaderboard.', 'A huge pot, {amt}, and it goes to {a}.', '{a} takes down {amt}. The crowd is on its feet!'],
+  tilt: ['Uh oh. Phil Hellmuth is steaming — watch out for anything now.', 'Hellmuth is not happy, folks. Tilt warning at the final table.'],
+  level: ['Blinds go up! The pressure just got real.', 'New level, bigger blinds — the short stacks need to find a spot.'],
+  champion: ['{a} is your 2027 Main Event champion! Ten million dollars and the bracelet!'],
+  leader: ['New chip leader! {a} takes over the top spot.'],
+};
+const pickLine = (k, ctx) => { const l = CALLS[k][Math.floor(Math.random() * CALLS[k].length)]; return l.replace(/\{(\w+)\}/g, (m, x) => ctx[x] != null ? ctx[x] : ''); };
+const Ann = { live: false, busy: false, last: 0, leader: null, voice: store.get('wsop27.voice', false) };
+function announcerSee(fresh) {
+  if (S.role !== 'host' || !S.G) return;
+  const G = S.G, bb = W.curLevel(G).bb, nm = id => (G.players.find(p => p.id === id) || {}).name;
+  const champ = fresh.find(e => e.kind === 'champion');
+  if (champ) { const firoOut = fresh.find(e => e.kind === 'bust' && e.who === 'firo');
+    return announce('champion', { a: nm(champ.who) + (firoOut ? ' — Firo\'s elimination ends the tournament, and' : '') }, champ); }
+  for (const e of fresh) {
+    let k = null, ctx = {};
+    if (e.kind === 'allin') { const live = G.players.filter(p => p.shown && !p.folded); k = 'allin'; ctx = { a: live[0] && live[0].name, b: live.slice(1).map(p => p.name).join(' and ') }; }
+    else if (e.kind === 'bust') { k = 'bust'; ctx = { a: nm(e.who), n: G.players.filter(p => !p.out).length }; }
+    else if (e.kind === 'champion') { k = 'champion'; ctx = { a: nm(e.who) }; }
+    else if (e.kind === 'win' && e.amount >= 40 * bb) { k = 'bigpot'; ctx = { a: nm(e.who), amt: W.fmt(e.amount) }; }
+    else if (e.kind === 'system' && /ON TILT/.test(e.text)) k = 'tilt';
+    else if (e.kind === 'level') k = 'level';
+    if (k) announce(k, ctx, e);
+  }
+  const lead = G.players.filter(p => !p.out).sort((a, b) => b.stack - a.stack)[0];
+  if (lead && Ann.leader && lead.id !== Ann.leader && G.handNo > 1) announce('leader', { a: lead.name });
+  if (lead) Ann.leader = lead.id;
+}
+function announce(k, ctx, e) {
+  const G = S.G, now = Date.now();
+  if (k !== 'champion' && k !== 'bust' && now - Ann.last < 6000) return;    // one call at a time
+  Ann.last = now;
+  const say = text => { W.log(G, 'announcer', text); publish(); scheduleSave(); };
+  if (!(Ann.live && Cl.sample) || Ann.busy) return say(pickLine(k, ctx));
+  Ann.busy = true;
+  const table = G.players.map(p => `${p.name}${p.kind === 'bot' ? ' (AI pro)' : ''}: ${p.out ? 'out' : W.fmt(p.stack)}`).join('; ');
+  const prompt = `You are a TV poker announcer calling the 2027 Main Event final table (winner takes all, $10,000,000). ` +
+    `Write ONE exciting broadcast line, at most 22 words, about this moment: ${e ? e.text : pickLine(k, ctx)}. ` +
+    `Chip counts: ${table}. Kevin and Firo are the two unknown amateurs (Firo is a woman). Plain text only, no quotes, no hashtags.`;
+  const t = setTimeout(() => { if (Ann.busy) { Ann.busy = false; say(pickLine(k, ctx)); } }, 7000);
+  Cl.sample(prompt, { modelTier: 'quick', cache: false })
+    .then(r => { if (!Ann.busy) return; clearTimeout(t); Ann.busy = false; say(((r && r.text) || '').trim().replace(/^["']|["']$/g, '').slice(0, 200) || pickLine(k, ctx)); })
+    .catch(() => { if (!Ann.busy) return; clearTimeout(t); Ann.busy = false; say(pickLine(k, ctx)); });
+}
+function speak(text) {
+  if (!Ann.voice || !Sound.on || !window.speechSynthesis) return;
+  try { const u = new SpeechSynthesisUtterance(text); u.rate = 1.05; u.pitch = 0.9; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) { /* no voice */ }
+}
+// Private tip for the viewer only: junk hands outside the blinds are a fold.
+function coachTip(v, la, cards) {
+  const mi = myIdx();
+  if (!cards || v.street !== 'preflop' || mi === v.sb || mi === v.bb || !la || la.toCall === 0) return '';
+  const pct = B.playPct(cards[0], cards[1]);
+  const raised = la.currentBet > la.bb;
+  const limit = raised ? 0.30 : mi === v.button ? 0.62 : 0.48;
+  if (pct <= limit) return '';
+  return `<div class="coach">Coach: ${esc(W.preflopName(cards))} is a fold here${raised ? ' facing a raise' : ''}. You have no blind in, so letting it go costs nothing.</div>`;
 }
 
 /* ═══════════ NETWORK ═══════════
@@ -1181,7 +1254,7 @@ function publish() {
   // New log entries since last send
   const fresh = [];
   for (const e of G.log) if (e.n > S.sentLog) fresh.push(e);
-  if (fresh.length) { S.sentLog = fresh[fresh.length - 1].n; Net.send({ t: 'log', entries: fresh }); addLog(fresh, true); }
+  if (fresh.length) { S.sentLog = fresh[fresh.length - 1].n; Net.send({ t: 'log', entries: fresh }); addLog(fresh, true); announcerSee(fresh); }
   Net.send({ t: 'state', s: hostView(null) });
   sendHole();
   S.view = hostView(S.me);
@@ -1360,6 +1433,7 @@ function rebuildLocalLog() {
 }
 function liveEffects(e) {
   if (e.ann) showAnn(e.ann);
+  if (e.kind === 'announcer') { showAnn({ type: 'call', title: '🎙 ' + e.text }); speak(e.text); }
   if (e.kind === 'action' && e.act === 'raise' && ICONS[e.who]) fxPulse(e.who, 'fire', 900);
   if ((e.kind === 'talk' || e.kind === 'emote') && ICONS[e.who]) fxPulse(e.who, 'talking', 2600);
   if (e.kind === 'board') Sound.play('card');
@@ -1380,6 +1454,7 @@ function logRow(e) {
   if (e.kind === 'talk' || e.kind === 'chat') {
     return `<div class="le ${e.kind}" data-k="chat">${miniHTML(e.who)}<div class="bub"><b style="color:${col}">${esc(name)}</b> ${richText(e.text)}</div></div>`;
   }
+  if (e.kind === 'announcer') return `<div class="le announcer" data-k="chat">🎙 <b>Announcer</b> ${richText(e.text)}</div>`;
   if (e.kind === 'emote') return `<div class="le emote" data-k="chat">✦ ${esc(e.text)}</div>`;
   if (e.kind === 'hand') return `<div class="le hand" data-k="hands">${richText(e.text)}</div>`;
   if (e.kind === 'board') {
@@ -1452,7 +1527,7 @@ function nextAnn() {
   if (!a) { S.annT = null; return; }
   if (a.type === 'intro') { showIntro(); return nextAnn(); }
   host.innerHTML = `<div class="ann ${a.type}"><div class="t">${esc(a.title)}</div><div class="s">${esc(a.sub || '')}</div></div>`;
-  const dur = a.type === 'champion' ? 6000 : a.type === 'level' ? 6500 : a.type === 'bust' ? 4200 : 3000;
+  const dur = a.type === 'call' ? 4500 : a.type === 'champion' ? 6000 : a.type === 'level' ? 6500 : a.type === 'bust' ? 4200 : 3000;
   S.annT = setTimeout(() => {
     const el = host.firstElementChild; if (el) el.classList.add('out');
     S.annT = setTimeout(() => { host.innerHTML = ''; nextAnn(); }, 400);
@@ -1669,7 +1744,7 @@ function renderDock(v) {
   S.raiseTo = Math.min(Math.max(S.raiseTo, la.minTo), la.maxTo);
   const callLbl = la.canCheck ? 'Check' : (la.call >= la.stack ? `All-in <small>${fmt(la.call)}</small>` : `Call <small>${fmt(la.call)}</small>`);
   const rLbl = S.raiseTo >= la.maxTo ? `All-in <small>${fmt(la.maxTo)}</small>` : `${la.verb} to <small>${fmt(S.raiseTo)}</small>`;
-  acts.innerHTML = `<div class="main">
+  acts.innerHTML = `${coachTip(v, la, cards)}<div class="main">
       <button class="abtn fold ${S.foldConfirm ? 'confirm' : ''}" id="a-fold">${S.foldConfirm ? 'Fold?<small>tap again</small>' : 'Fold'}</button>
       <button class="abtn call" id="a-call">${callLbl}</button>
       <button class="abtn raise" id="a-raise" ${la.canRaise ? '' : 'disabled'}>${la.canRaise ? rLbl : 'Raise'}</button>
@@ -1903,6 +1978,7 @@ function showWaitGuest() {
 }
 function claudeWaitLayout(isHost) {
   if (!CLAUDE_MODE) return;
+  $('ai-ann-row').hidden = !(isHost && Cl.sample);
   $('wait-link').hidden = true;
   const box = $('cl-share');
   if (S.code !== 'TABLE') { box.hidden = false; box.textContent = 'Practice table on this device: the other seat plays itself.'; return; }
@@ -1943,6 +2019,14 @@ function initLobby() {
   $('deal-btn').onclick = () => {
     S.settings = { clock: +$('opt-clock').value, pace: +$('opt-pace').value, absent: $('opt-absent').value };
     hostStartGame();
+  };
+  $('opt-voice').value = Ann.voice ? '1' : '0';
+  $('opt-voice').onchange = () => { Ann.voice = $('opt-voice').value === '1'; store.set('wsop27.voice', Ann.voice); Sound.init(); if (Ann.voice) speak('Welcome to the final table.'); };
+  $('ai-ann').onclick = async () => {
+    // First call asks for consent, from this click.
+    $('ai-ann').disabled = true; $('ai-ann').textContent = 'Checking…';
+    try { await Cl.sample('Reply with exactly: Ready.', { modelTier: 'quick', cache: false }); Ann.live = true; $('ai-ann').textContent = 'Live Claude commentary is on'; }
+    catch (e) { $('ai-ann').textContent = 'Claude commentary unavailable — using built-in calls'; }
   };
   ['opt-clock', 'opt-pace', 'opt-absent'].forEach(id => $(id).onchange = () => { S.settings = { clock: +$('opt-clock').value, pace: +$('opt-pace').value, absent: $('opt-absent').value }; saveNow(); });
   $('copy-link').onclick = async () => { try { await navigator.clipboard.writeText(inviteUrl()); toast('Invite link copied'); } catch (e) { toast('Copy failed — select the link above'); } };
