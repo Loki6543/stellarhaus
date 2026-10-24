@@ -298,7 +298,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); height: 28px; }
 .confetti i { position: absolute; top: -20px; width: 8px; height: 14px; animation: fall linear forwards; }
 @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
 .toast { position: fixed; left: 50%; bottom: 120px; transform: translateX(-50%); z-index: 60; background: var(--panel3); border: 1px solid var(--line2); padding: 10px 16px; border-radius: 12px; font-size: .88rem; box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: annIn .3s; max-width: 92vw; text-align: center; }
-.pausebar { position: absolute; inset: 0; z-index: 15; display: grid; place-items: center; background: rgba(0,0,0,.45); font-family: var(--fd); letter-spacing: .3em; font-size: 1.4rem; color: var(--gold2); pointer-events: none; }
+.pausebar { position: absolute; inset: 0; z-index: 15; display: grid; place-items: center; text-align: center; padding: 20px; background: rgba(0,0,0,.5); font-family: var(--fd); letter-spacing: .2em; text-transform: uppercase; font-size: clamp(.95rem, 2.6vw, 1.4rem); color: var(--gold2); pointer-events: none; }
 
 /* ── Responsive ────────────────────────────────────────────── */
 @media (max-width: 1100px) { .arena { grid-template-columns: minmax(0, 1fr) 300px; } }
@@ -431,7 +431,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); height: 28px; }
       <div class="opts">
         <label>Shot clock<select id="opt-clock"><option value="30">30 seconds</option><option value="45" selected>45 seconds</option><option value="60">60 seconds</option><option value="90">90 seconds</option></select></label>
         <label>Pace<select id="opt-pace"><option value="1" selected>Broadcast</option><option value="0.55">Fast</option></select></label>
-        <label style="grid-column:1/-1">If your partner isn’t connected<select id="opt-absent"><option value="clock" selected>Their shot clock checks / folds</option><option value="autopilot">Autopilot plays their seat (practice)</option></select></label>
+        <label style="grid-column:1/-1">If your partner’s connection drops<select id="opt-absent"><option value="pause" selected>Pause the game until they’re back</option><option value="clock">Their shot clock checks / folds</option><option value="autopilot">Autopilot plays their seat (practice)</option></select></label>
       </div>
       <button class="btn gold wide" id="deal-btn">Shuffle up and deal</button>
     </div>
@@ -522,6 +522,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); height: 28px; }
 <script src="poker-engine.js"></script>
 <script src="poker-bots.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 (function () {
@@ -536,6 +537,18 @@ const VS = '︎';                        // keep ♥♦ as text glyphs on iOS
 const SUPABASE_URL = 'https://ugkttajdfiefibnpltfw.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVna3R0YWpkZmllZmlibnBsdGZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxODQwMDgsImV4cCI6MjA5MDc2MDAwOH0.aEzqrw6ybWg82rvTJjUtieiS_EP_bTIKJqNLFwa4Qq4';
 const PEER_PREFIX = 'wsop27-stellarhaus-';
+// WebRTC: extra STUN servers plus PeerJS's own TURN relays (for strict / cellular NATs).
+const PEER_OPTS = { debug: 0, config: { iceServers: [
+  { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
+  { urls: 'stun:stun.cloudflare.com:3478' },
+  { urls: ['turn:eu-0.turn.peerjs.com:3478', 'turn:us-0.turn.peerjs.com:3478'], username: 'peerjs', credential: 'peerjsp' },
+], sdpSemantics: 'unified-plan' } };
+// Encrypted relay over public MQTT brokers — works when a direct link can't be made.
+const RELAYS = [
+  ['wss://public.cloud.shiftr.io', { username: 'public', password: 'public' }],
+  ['wss://broker.hivemq.com:8884/mqtt', {}],
+  ['wss://broker.emqx.io:8084/mqtt', {}],
+];
 const SEATS = [
   { id: 'kevin', name: 'Kevin', kind: 'human' },
   { id: 'firo', name: 'Firo', kind: 'human' },
@@ -647,7 +660,7 @@ const Sound = {
 /* ── App state ────────────────────────────────────────────── */
 const S = {
   role: null, me: store.get('wsop27.me', null), code: null,
-  G: null, settings: { clock: 45, pace: 1, absent: 'clock' },
+  G: null, settings: { clock: 45, pace: 1, absent: 'pause' },
   view: null, hole: null, log: [], logIds: new Set(), logCids: new Set(),
   sentLog: 0, guestSeen: 0, hostSeen: 0, welcome: null,
   clock: null, loopT: null, saveT: null, ann: [], annT: null,
@@ -666,17 +679,17 @@ const Net = {
     this.code = code; this.role = role;
     const on = (m, via, conn) => onMessage(m, via, conn);
     const st = (via, ok, why) => { this.status[via] = { ok, why }; renderConn(); };
-    const p = p2pTransport(code, role, on, st), s = sbTransport(code, on, st);
-    this.tr = [p, s].filter(Boolean);
+    const p = p2pTransport(code, role, on, st), r = relayTransport(code, role, on, st), s = sbTransport(code, on, st);
+    this.tr = [p, r, s].filter(Boolean);
   },
   stop() { this.tr.forEach(t => { try { t.close(); } catch (e) { /* already closed */ } }); this.tr = []; this.status = {}; },
   send(m) { m.from = this.role; m.code = this.code; this.tr.forEach(t => { try { t.send(m); } catch (e) { /* transport down */ } }); },
   sendConn(conn, m) { m.from = this.role; m.code = this.code; try { conn ? conn.send(m) : this.send(m); } catch (e) { /* closed */ } },
   get up() { return this.tr.some(t => t.ok); },
   label() {
-    const p = this.status.p2p, s = this.status.sb;
-    if (p && p.ok) return 'P2P link';
-    if (s && s.ok) return 'Realtime link';
+    const p = this.status.p2p, r = this.status.relay, s = this.status.sb;
+    const up = [p && p.ok && 'P2P', r && r.ok && 'relay', s && s.ok && 'realtime'].filter(Boolean);
+    if (up.length) return up.join(' + ') + ' link';
     if (p && p.why === 'busy') return 'Reclaiming table…';
     if (p && p.why === 'nohost') return 'Looking for host…';
     return 'Connecting…';
@@ -689,7 +702,7 @@ function p2pTransport(code, role, onMsg, onStatus) {
   let peer = null, conns = [], dead = false, ready = false, pending = null, pendT = null;
   const open = () => {
     if (dead) return;
-    try { peer = role === 'host' ? new window.Peer(hostId, { debug: 0 }) : new window.Peer({ debug: 0 }); }
+    try { peer = role === 'host' ? new window.Peer(hostId, PEER_OPTS) : new window.Peer(PEER_OPTS); }
     catch (e) { onStatus('p2p', false, 'error'); return; }
     peer.on('open', () => { if (role === 'host') { ready = true; onStatus('p2p', true); } else connect(); });
     peer.on('connection', c => { if (role === 'host') wire(c); });
@@ -730,6 +743,58 @@ function p2pTransport(code, role, onMsg, onStatus) {
     send: m => conns.forEach(c => { if (c.open) c.send(m); }),
     close: () => { dead = true; try { peer && peer.destroy(); } catch (e) { /* noop */ } },
     get ok() { return role === 'host' ? ready : conns.some(c => c.open); },
+  };
+}
+
+// Key + topic come from the table code, so only the two of you can read the traffic.
+async function relayKeys(code) {
+  const enc = new TextEncoder();
+  const base = await crypto.subtle.importKey('raw', enc.encode('wsop27:' + code), 'PBKDF2', false, ['deriveBits']);
+  const bits = new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: enc.encode('stellarhaus-final-table'), iterations: 150000, hash: 'SHA-256' }, base, 384));
+  const key = await crypto.subtle.importKey('raw', bits.slice(0, 32), 'AES-GCM', false, ['encrypt', 'decrypt']);
+  const topic = 'stellarhaus/wsop27/' + Array.from(bits.slice(32), b => b.toString(16).padStart(2, '0')).join('');
+  return { key, topic };
+}
+const b64 = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function seal(key, m) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(m))));
+  const out = new Uint8Array(12 + ct.length); out.set(iv); out.set(ct, 12);
+  return b64(out);
+}
+async function unseal(key, text) {
+  const b = unb64(text);
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b.slice(0, 12) }, key, b.slice(12));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+function relayTransport(code, role, onMsg, onStatus) {
+  if (!window.mqtt || !window.crypto || !crypto.subtle) return null;
+  let clients = [], keys = null, dead = false, outQ = Promise.resolve();
+  const status = () => onStatus('relay', clients.some(c => c.connected));
+  relayKeys(code).then(k => {
+    if (dead) return;
+    keys = k;
+    clients = RELAYS.map(([url, o]) => {
+      let c;
+      try { c = window.mqtt.connect(url, Object.assign({ clientId: 'wsop27_' + uid() + uid(), clean: true, keepalive: 30, connectTimeout: 10000, reconnectPeriod: 5000 }, o)); }
+      catch (e) { return null; }
+      let inQ = Promise.resolve();
+      c.on('connect', () => { c.subscribe(keys.topic, { qos: 0 }); status(); if (role === 'guest') onMsg({ t: '_open' }, 'relay', null); });
+      // Decrypt in arrival order; anything that fails to decrypt isn't ours.
+      c.on('message', (t, buf) => { inQ = inQ.then(() => unseal(keys.key, buf.toString())).then(m => onMsg(m, 'relay', null)).catch(() => {}); });
+      c.on('close', status); c.on('offline', status); c.on('error', () => { /* reconnects on its own */ });
+      return c;
+    }).filter(Boolean);
+  }).catch(() => onStatus('relay', false, 'error'));
+  return {
+    send: m => {
+      if (!keys) return;
+      const msg = JSON.parse(JSON.stringify(m));
+      outQ = outQ.then(() => seal(keys.key, msg)).then(data => { for (const c of clients) if (c.connected) c.publish(keys.topic, data, { qos: 0 }); }).catch(() => {});
+    },
+    close: () => { dead = true; clients.forEach(c => { try { c.end(true); } catch (e) { /* noop */ } }); },
+    get ok() { return clients.some(c => c.connected); },
   };
 }
 
@@ -792,12 +857,27 @@ function hostCreate(code) {
 }
 function hostHeartbeat() {
   if (S.role !== 'host') return;
+  autoPause();
   publish();
   renderConn(); renderWait();
   // Seat on autopilot may need to act once the partner drops.
   if (S.G && S.G.phase === 'betting' && !S.G.paused) {
     const p = S.G.players[S.G.toAct];
     if (p && isAuto(p) && p.kind === 'human' && !S.botPending) hostTick();
+  }
+}
+
+// Partner dropped mid-game → hold everything until they reconnect.
+function autoPause() {
+  const G = S.G;
+  if (!G || G.phase === 'lobby' || G.phase === 'over') return;
+  const gp = G.players[hostSeatIdx(OTHER[S.me])];
+  if (S.settings.absent === 'pause' && S.guestWasOnline && gp && !gp.out && !guestOnline() && !G.paused) {
+    G.autoPaused = true;
+    setPaused(true, '', `${gp.name}'s connection dropped — game paused until ${gp.name} is back.`, `Waiting for ${gp.name} to reconnect…`);
+  } else if (G.autoPaused && G.paused && (guestOnline() || S.settings.absent !== 'pause' || (gp && gp.out))) {
+    G.autoPaused = false;
+    setPaused(false, '', `${gp ? gp.name : 'Partner'} is back — play resumes.`);
   }
 }
 
@@ -905,7 +985,7 @@ function saveNow() {
 
 function hostView(viewer) {
   const G = S.G, v = W.publicView(G, viewer);
-  v.paused = !!G.paused;
+  v.paused = !!G.paused; v.pauseReason = G.pauseReason || '';
   v.clock = S.clock && (S.clock.turnId === G.turnId || S.clock.turnId === 'sm' + G.handNo)
     ? { seat: S.clock.seat, ms: G.paused && S.clock.left != null ? S.clock.left : Math.max(0, S.clock.end - Date.now()), total: S.clock.total } : null;
   v.hostSeat = S.me; v.guestSeat = OTHER[S.me]; v.guestOnline = guestOnline();
@@ -937,12 +1017,13 @@ function sendHole(conn) {
 function hostReceive(m, conn) {
   const G = S.G; if (!G) return;
   S.guestSeen = Date.now();
+  if (G.autoPaused) autoPause();
   const gid = OTHER[S.me], gi = hostSeatIdx(gid);
   switch (m.t) {
     case 'hello': {
       const first = !S.guestWasOnline; S.guestWasOnline = true;
       Net.sendConn(conn, { t: 'welcome', hostSeat: S.me, guestSeat: gid, started: G.phase !== 'lobby' });
-      Net.sendConn(conn, { t: 'logsync', entries: G.log.slice(-250) });
+      Net.sendConn(conn, { t: 'logsync', entries: G.log.slice(-160) });
       Net.sendConn(conn, { t: 'state', s: hostView(null) });
       sendHole(conn);
       if (first && G.phase !== 'lobby') { W.log(G, 'system', `${G.players[gi].name} connected.`); afterChange(); }
@@ -979,12 +1060,13 @@ function hostChat(fromId, text, cid) {
   publish(); scheduleSave();
 }
 
-function setPaused(on, by) {
+function setPaused(on, by, msg, reason) {
   const G = S.G; if (!G || G.phase === 'lobby' || G.phase === 'over' || !!G.paused === on) return;
-  G.paused = on;
+  G.paused = on; G.pauseReason = on ? (reason || `Paused by ${by}`) : '';
+  if (!on) G.autoPaused = false;
   if (on) { if (S.clock) S.clock.left = Math.max(0, S.clock.end - Date.now()); clearTimeout(S.loopT); }
   else if (S.clock && S.clock.left != null) { S.clock.end = Date.now() + S.clock.left; S.clock.left = null; }
-  W.log(G, 'system', `${by} ${on ? 'paused' : 'resumed'} the game.`);
+  W.log(G, 'system', msg || `${by} ${on ? 'paused' : 'resumed'} the game.`);
   afterChange();
 }
 
@@ -1201,7 +1283,9 @@ function render() {
   renderHud(v); renderSeats(v); renderCenter(v); renderDock(v);
   if (S.tab === 'stand') renderStandings(v);
   if (S.tab === 'scout') renderScout(v);
-  $('pausebar').classList.toggle('hidden', !v.paused);
+  const hostGone = S.role === 'guest' && S.welcome && Date.now() - S.hostSeen > 15000;
+  $('pausebar').classList.toggle('hidden', !v.paused && !hostGone);
+  $('pausebar').textContent = hostGone ? `Waiting for ${SHORT[S.welcome.hostSeat]}’s connection…` : (v.pauseReason || 'PAUSED');
   $('b-pause').classList.toggle('on', !!v.paused);
   // Notify on my turn
   const mi = myIdx();
@@ -1358,11 +1442,11 @@ function renderDock(v) {
     tickClock(); return;
   }
   const la = v.phase === 'betting' && v.toAct === mi ? v.legal : null;
-  if (!la || S.sentTurn === v.turnId) {
+  if (!la || S.sentTurn === v.turnId || v.paused) {
     let who = '';
-    if (v.phase === 'betting' && v.toAct >= 0) who = v.toAct === mi ? 'Sending…' : `Waiting on <b>${esc(v.players[v.toAct].name)}</b>`;
+    if (v.paused) who = esc(v.pauseReason || 'Paused');
+    else if (v.phase === 'betting' && v.toAct >= 0) who = v.toAct === mi ? 'Sending…' : `Waiting on <b>${esc(v.players[v.toAct].name)}</b>`;
     else if (v.phase === 'lobby') who = 'Waiting for the deal';
-    else if (v.paused) who = 'Paused';
     else who = '&nbsp;';
     acts.innerHTML = `<div class="waiting">${who}</div>`;
     return;
@@ -1564,7 +1648,13 @@ function setUrl(code) {
 function inviteUrl() {
   const u = new URL(location.href); u.search = ''; u.hash = ''; u.searchParams.set('table', S.code); return u.toString();
 }
+// Keep phones awake during play (re-acquired whenever the tab comes back).
+async function keepAwake() {
+  try { if ('wakeLock' in navigator && !document.hidden && !S.wake) { S.wake = await navigator.wakeLock.request('screen'); S.wake.addEventListener('release', () => { S.wake = null; }); } }
+  catch (e) { /* not supported or denied */ }
+}
 function enterGame() {
+  keepAwake();
   $('lobby').classList.add('hidden'); $('game').classList.remove('hidden');
   renderRules();
   requestAnimationFrame(() => { layout(); render(); renderLog(); });
@@ -1576,7 +1666,7 @@ function showWaitHost() {
   $('wait-code').textContent = S.code;
   $('invite-link').textContent = inviteUrl();
   $('opt-clock').value = S.settings.clock; $('opt-pace').value = S.settings.pace; $('opt-absent').value = S.settings.absent;
-  $('wait-note').textContent = `Send ${SHORT[OTHER[S.me]]} the link. You can deal right away — their seat waits on the shot clock until they connect.`;
+  $('wait-note').textContent = `Send ${SHORT[OTHER[S.me]]} the link — it works across Wi-Fi and cellular, anywhere. Keep this page open while you play: your device deals the cards. If either connection drops, the game pauses until you're both back.`;
   renderWait();
 }
 function showWaitGuest() {
@@ -1699,7 +1789,7 @@ function initChrome() {
     else if (k === 'c' || k === 'k') $('a-call') && $('a-call').click();
     else if (k === 'r' || k === 'b') $('a-raise') && !$('a-raise').disabled && $('a-raise').click();
   });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); else if (!$('game').classList.contains('hidden')) keepAwake(); });
   window.addEventListener('pagehide', saveNow);
   document.addEventListener('pointerdown', () => Sound.init(), { once: true });
 }
