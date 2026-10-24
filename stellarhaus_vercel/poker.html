@@ -469,6 +469,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); height: 28px; }
       <span class="pill" id="h-hand">Hand #0</span>
       <span class="pill conn" id="h-conn"><span class="dot"></span>—</span>
       <button class="ibtn" id="b-sound" title="Sound"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg></button>
+      <button class="ibtn" id="b-new" title="New game"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
       <button class="ibtn" id="b-pause" title="Pause"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
       <button class="ibtn" id="b-side" title="Log & standings"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span class="badge hidden" id="b-side-n">0</span></button>
     </div>
@@ -560,7 +561,7 @@ const RELAYS = [
 ];
 const SEATS = [
   { id: 'kevin', name: 'Kevin', kind: 'human' },
-  { id: 'firo', name: 'Firo', kind: 'human' },
+  { id: 'firo', name: 'Firo', kind: 'human', endsGame: true },
   { id: 'dwan', name: 'Tom Dwan', kind: 'bot', persona: 'dwan' },
   { id: 'hellmuth', name: 'Phil Hellmuth', kind: 'bot', persona: 'hellmuth' },
   { id: 'negreanu', name: 'Daniel Negreanu', kind: 'bot', persona: 'negreanu' },
@@ -1785,7 +1786,11 @@ function showFinal(v) {
   const cf = $('confetti'), cols = ['#f5d77f', '#d0142f', '#3fa7ff', '#3ddc97', '#ffffff'];
   for (let i = 0; i < 90; i++) { const c = document.createElement('i'); c.style.left = Math.random() * 100 + '%'; c.style.background = cols[i % cols.length]; c.style.animationDuration = 2.5 + Math.random() * 3 + 's'; c.style.animationDelay = Math.random() * 1.5 + 's'; cf.appendChild(c); }
   $('fin-close').onclick = () => { $('overlay-host').innerHTML = ''; };
-  if ($('again')) $('again').onclick = () => {
+  if ($('again')) $('again').onclick = newTable;
+}
+function newTable() {
+  {
+    clearTimeout(S.loopT);
     S.G = W.newGame(SEATS); S.G.paused = false; S.lastHoleSent = ''; S.clock = null; S.sentLog = 0;
     $('overlay-host').innerHTML = '';
     W.drawForButton(S.G);
@@ -2020,6 +2025,12 @@ function initChrome() {
   $('b-sound').classList.toggle('on', Sound.on);
   $('b-sound').onclick = () => { Sound.init(); Sound.on = !Sound.on; store.set('wsop27.sound', Sound.on); $('b-sound').classList.toggle('on', Sound.on); if (Sound.on) Sound.play('chip'); };
   $('b-pause').onclick = togglePause;
+  // New game, any time (host deals it; the partner sees it immediately).
+  $('b-new').onclick = () => {
+    if (S.role !== 'host') return toast('The host starts new games.');
+    if (S.G.phase !== 'over' && !S.newConfirm) { S.newConfirm = true; toast('Tap again to abandon this game and start a new final table.'); setTimeout(() => S.newConfirm = false, 4000); return; }
+    S.newConfirm = false; newTable();
+  };
   S.showOdds = store.get('wsop27.odds', false);
   S.sideOpen = window.innerWidth > 900;
   window.addEventListener('resize', layout);

@@ -137,3 +137,18 @@ test('head-to-head ledger stays consistent and rivalries shape decisions', () =>
   const kev = fresh.players.find(p => p.id === 'kevin');
   assert.ok(B.rival(fresh, dwan, kev).bluffMul > 1.3);
 });
+
+test('Firo busting ends the event; Kevin busting does not', () => {
+  const seats = SEATS.map(s => s.id === 'firo' ? Object.assign({}, s, { endsGame: true }) : s);
+  for (const loser of ['kevin', 'firo']) {
+    const G = W.newGame(seats, { stacks: { kevin: 20e6, firo: 20e6, dwan: 100e6, hellmuth: 90e6, negreanu: 80e6 } });
+    G.button = 4; W.startHand(G);
+    const p = G.players.find(x => x.id === loser);
+    p.stack = 0; G.players.forEach(x => x.startStack = x.stack + (x === p ? 1 : 0));
+    G.results = []; G.phase = 'handEnd';
+    // settle via a muck after an uncontested win
+    G.phase = 'showmuck'; G.showmuck = { seat: 2, hand: G.handNo }; W.showOrMuck(G, 2, false);
+    if (loser === 'firo') { assert.strictEqual(G.phase, 'over'); assert.strictEqual(G.results.length, 5); }
+    else assert.notStrictEqual(G.phase, 'over');
+  }
+});

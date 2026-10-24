@@ -232,7 +232,7 @@ function newGame(seats, opts) {
     handNo: 0, level: 0, handsAtLevel: 0, handsPerLevel: opts.handsPerLevel || 5,
     payouts: PAYOUTS.slice(),
     players: seats.map((s, i) => ({
-      id: s.id, name: s.name, kind: s.kind, persona: s.persona || null, seat: i,
+      id: s.id, name: s.name, kind: s.kind, persona: s.persona || null, seat: i, endsGame: !!s.endsGame,
       stack: stacks[s.id], startStack: stacks[s.id], cards: [], folded: false, allIn: false,
       bet: 0, total: 0, acted: false, actSeq: -1, last: '', out: false, place: 0, prize: 0,
       shown: false, handName: '',
@@ -657,7 +657,17 @@ function settle(G) {
     }
     i = j + 1;
   }
-  const left = G.players.filter(alive);
+  let left = G.players.filter(alive);
+  // A player marked endsGame (Firo) busting ends the event: the rest finish in chip order. No rebuys.
+  if (left.length > 1 && G.players.some(p => p.endsGame && p.out && G.results.some(r => r.id === p.id && r.hand === G.handNo))) {
+    const order = left.slice().sort((a, b) => b.stack - a.stack);
+    for (let k = order.length - 1; k >= 1; k--) {
+      const p = order[k]; p.out = true; p.place = k + 1; p.prize = G.payouts[k];
+      G.results.push({ id: p.id, name: p.name, place: p.place, prize: p.prize, hand: G.handNo });
+      log(G, 'bust', `${p.name} finishes ${ordinal(p.place)} on chips and collects ${money(p.prize)}.`, { who: p.id });
+    }
+    left = [order[0]];
+  }
   if (left.length === 1) {
     const w = left[0];
     w.place = 1; w.prize = G.payouts[0];
