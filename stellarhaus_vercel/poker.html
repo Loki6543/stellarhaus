@@ -220,6 +220,11 @@ input, select { font: inherit; color: inherit; }
 .le.talk, .le.chat { display: flex; gap: 8px; align-items: flex-start; padding: 5px 0; }
 .le.talk .bub, .le.chat .bub { background: var(--panel3); border-radius: 4px 12px 12px 12px; padding: 6px 10px; color: var(--ink); }
 .le.chat .bub { background: rgba(61,220,151,.1); border: 1px solid rgba(61,220,151,.25); }
+.le.dm .bub { background: rgba(255,95,162,.12); border: 1px solid rgba(255,95,162,.4); }
+.le.dm .bub .dmtag, .q.dmon { color: #ff7fb6; }
+.le.dm .bub .dmtag { font-family: var(--fd); font-size: .62rem; letter-spacing: .14em; margin-right: 4px; }
+.q.dmon { border-color: #ff7fb6; background: rgba(255,95,162,.12); }
+#chatbar.dm input { border-color: #ff7fb6; }
 .mini { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--c); color: #0a0a0a; font-family: var(--fd); font-size: .6rem; display: grid; place-items: center; font-weight: 600; margin-top: 2px; }
 .cs { font-family: var(--fd); font-weight: 600; white-space: nowrap; padding: 0 3px; border-radius: 3px; background: #f4f2ea; }
 .cs.s-s { color: var(--s-s); } .cs.s-h { color: var(--s-h); } .cs.s-d { color: var(--s-d); } .cs.s-c { color: var(--s-c); }
@@ -527,6 +532,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); height: 28px; }
         <button class="chip on" data-f="all">All</button>
         <button class="chip" data-f="hands">Hands</button>
         <button class="chip" data-f="chat">Chat</button>
+        <button class="chip" data-f="dm">DMs</button>
         <button class="chip dl" id="dl-log" title="Download hand history">⇩ .txt</button>
       </div>
       <div class="pane" id="pane-log"></div>
@@ -535,6 +541,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); height: 28px; }
       <div class="pane hidden" id="pane-rules"></div>
       <form class="chatbar" id="chatbar">
         <input id="chat-in" maxlength="200" placeholder="Say something to the table…" autocomplete="off">
+        <button type="button" class="q" id="dm-tg" title="Private message just between you two">DM</button>
         <button type="button" class="q" data-q="nh">nh</button>
         <button type="button" class="q" data-q="gg">gg</button>
         <button class="btn gold" style="padding:8px 12px">Send</button>
@@ -1054,9 +1061,10 @@ function hostStartGame() {
   W.drawForButton(G);
   W.log(G, 'system', 'Welcome to the final table of the 2027 WSOP Main Event. Shuffle up and deal!',
     { ann: { type: 'intro', title: 'INTRODUCING YOUR FINAL TABLE' } });
+  // Both screens show the table + announcer intro for 15s before hand 1.
+  G.phase = 'intro'; G.introUntil = Date.now() + 15000;
   enterGame();
-  // Give the announcer time to introduce the table before the first deal.
-  S.loopT = setTimeout(nextHand, 15000);
+  afterChange();
 }
 
 function nextHand() {
@@ -1079,6 +1087,7 @@ function hostTick() {
   const G = S.G;
   clearTimeout(S.loopT); S.loopT = null; S.botPending = false;
   if (!G || G.paused || G.phase === 'lobby' || G.phase === 'over') return;
+  if (G.phase === 'intro') { S.loopT = setTimeout(nextHand, Math.max(0, (G.introUntil || 0) - Date.now())); return; }
   if (G.phase === 'betting') {
     const seat = G.toAct, p = G.players[seat], turn = G.turnId;
     if (isAuto(p)) {
@@ -1216,17 +1225,18 @@ function hostReceive(m, conn) {
       }
       break;
     case 'chat':
-      if (m.cid && !S.logCids.has(m.cid)) hostChat(gid, String(m.text || '').slice(0, 200), m.cid);
+      if (m.cid && !S.logCids.has(m.cid)) hostChat(gid, String(m.text || '').slice(0, 200), m.cid, !!m.dm);
       break;
     case 'pause': setPaused(!!m.paused, G.players[gi].name); break;
   }
 }
 
-function hostChat(fromId, text, cid) {
+function hostChat(fromId, text, cid, dm) {
   const G = S.G; if (!text.trim()) return;
   const p = G.players.find(x => x.id === fromId);
-  W.log(G, 'chat', text, { who: fromId, cid });
-  for (const r of B.onChat(G, p.name, text)) {
+  W.log(G, dm ? 'dm' : 'chat', text, { who: fromId, cid });
+  // DMs are just between Kevin and Firo: the bots never hear them.
+  for (const r of dm ? [] : B.onChat(G, p.name, text)) {
     setTimeout(() => { if (S.G === G) { W.log(G, 'talk', r.text, { who: r.who }); publish(); scheduleSave(); } }, r.delay || 1500);
   }
   publish(); scheduleSave();
@@ -1315,11 +1325,12 @@ function doShow(show) {
 function sendChat(text) {
   text = text.trim(); if (!text) return;
   const cid = 'c-' + uid();
-  if (S.role === 'host') hostChat(S.me, text, cid);
+  const dm = !!S.dm;
+  if (S.role === 'host') hostChat(S.me, text, cid, dm);
   else {
-    const e = { id: cid, cid, kind: 'chat', text, who: S.me, hand: S.view ? S.view.handNo : 0, t: Date.now() };
+    const e = { id: cid, cid, kind: dm ? 'dm' : 'chat', text, who: S.me, hand: S.view ? S.view.handNo : 0, t: Date.now() };
     addLog([e], false);
-    Net.send({ t: 'chat', text, cid });
+    Net.send({ t: 'chat', text, cid, dm });
   }
 }
 function togglePause() {
@@ -1332,14 +1343,14 @@ function togglePause() {
 function addLog(entries, live) {
   const fresh = [];
   for (const e of entries) {
-    if (S.logIds.has(e.id) || (e.cid && S.logCids.has(e.cid) && e.kind === 'chat')) continue;
+    if (S.logIds.has(e.id) || (e.cid && S.logCids.has(e.cid) && (e.kind === 'chat' || e.kind === 'dm'))) continue;
     S.logIds.add(e.id); if (e.cid) S.logCids.add(e.cid);
     S.log.push(e); fresh.push(e);
   }
   if (S.log.length > 1600) S.log.splice(0, S.log.length - 1600);
   if (!fresh.length) return;
   if (live) for (const e of fresh) liveEffects(e);
-  if (!S.sideOpen || S.tab !== 'log') { S.unread += fresh.filter(e => e.kind === 'chat' || e.kind === 'talk').length; }
+  if (!S.sideOpen || S.tab !== 'log') { S.unread += fresh.filter(e => e.kind === 'chat' || e.kind === 'dm' || e.kind === 'talk').length; }
   renderLog(fresh);
 }
 function rebuildLocalLog() {
@@ -1363,6 +1374,9 @@ function liveEffects(e) {
 function logRow(e) {
   const name = e.who && SHORT[e.who] ? SHORT[e.who] : '';
   const col = e.who && COLORS[e.who] ? COLORS[e.who] : '#888';
+  if (e.kind === 'dm') {
+    return `<div class="le dm" data-k="dm">${miniHTML(e.who)}<div class="bub"><span class="dmtag">DM</span><b style="color:${col}">${esc(name)}</b> ${richText(e.text)}</div></div>`;
+  }
   if (e.kind === 'talk' || e.kind === 'chat') {
     return `<div class="le ${e.kind}" data-k="chat">${miniHTML(e.who)}<div class="bub"><b style="color:${col}">${esc(name)}</b> ${richText(e.text)}</div></div>`;
   }
@@ -1391,12 +1405,13 @@ function renderLog(fresh) {
 }
 function applyFilter() {
   const f = S.filter;
-  $('pane-log').querySelectorAll('.le').forEach(el => { el.style.display = f === 'all' || el.dataset.k === f ? '' : 'none'; });
+  $('pane-log').querySelectorAll('.le').forEach(el => { el.style.display = f === 'all' || el.dataset.k === f || (f === 'chat' && el.dataset.k === 'dm') ? '' : 'none'; });
 }
 async function downloadLog() {
   const lines = S.log.map(e => {
     const n = e.who && SHORT[e.who] ? SHORT[e.who] : '';
     if (e.kind === 'hand') return '\n' + e.text;
+    if (e.kind === 'dm') return `  [DM] ${n}: ${e.text}`;
     if (e.kind === 'talk' || e.kind === 'chat') return `  [chat] ${n}: ${e.text}`;
     return '  ' + e.text;
   });
@@ -1841,8 +1856,7 @@ function newTable() {
     W.drawForButton(S.G);
     if (CLAUDE_MODE && Cl.db && S.code === 'TABLE') writeMeta();
     W.log(S.G, 'system', 'A new final table begins. Fresh stacks, same legends.', { ann: { type: 'intro', title: 'NEW FINAL TABLE' } });
-    publish();
-    S.loopT = setTimeout(nextHand, 15000);
+    S.G.phase = 'intro'; S.G.introUntil = Date.now() + 15000; afterChange();
   };
 }
 
@@ -2067,7 +2081,12 @@ function initChrome() {
   };
   $('dl-log').onclick = downloadLog;
   $('chatbar').onsubmit = e => { e.preventDefault(); sendChat($('chat-in').value); $('chat-in').value = ''; };
-  $('chatbar').querySelectorAll('.q').forEach(b => b.onclick = () => sendChat(b.dataset.q));
+  $('chatbar').querySelectorAll('.q[data-q]').forEach(b => b.onclick = () => sendChat(b.dataset.q));
+  $('dm-tg').onclick = () => {
+    S.dm = !S.dm;
+    $('dm-tg').classList.toggle('dmon', S.dm); $('chatbar').classList.toggle('dm', S.dm);
+    $('chat-in').placeholder = S.dm ? `Private message to ${SHORT[OTHER[S.me]] || 'your partner'}…` : 'Say something to the table…';
+  };
   $('b-sound').classList.toggle('on', Sound.on);
   $('b-sound').onclick = () => { Sound.init(); Sound.on = !Sound.on; store.set('wsop27.sound', Sound.on); $('b-sound').classList.toggle('on', Sound.on); if (Sound.on) Sound.play('chip'); };
   $('b-pause').onclick = togglePause;
