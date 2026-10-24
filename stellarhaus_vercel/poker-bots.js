@@ -437,6 +437,15 @@ function decide(G, seat) {
   }
   const opps = G.players.filter(o => inHand(o) && o !== p);
   const d = G.street === 'preflop' ? preflop(G, p, per, me, la, opps, tilt, say) : postflop(G, p, per, me, la, opps, tilt, say);
+  // Difficulty (0-10, default 3.4): below 10 the pros make human-sized mistakes —
+  // they pay off value bets, give up on bluffs and miss thin value.
+  const diff = G.difficulty == null ? 3.4 : G.difficulty;
+  const err = (10 - diff) / 10 * 0.45;
+  if (err > 0 && rand() < err) {
+    if (d.type === 'fold' && la.toCall > 0 && la.call < p.stack * 0.5) d.type = 'call';
+    else if (d.type === 'raise' && !la.canCheck && la.toCall > 0) d.type = 'call';
+    else if (d.type === 'raise' && la.canCheck && rand() < 0.6) d.type = 'check';
+  }
   // Final legality guard.
   if (d.type === 'raise' && !la.canRaise) d.type = la.canCheck ? 'check' : 'call';
   if (d.type === 'fold' && la.canCheck) d.type = 'check';
@@ -571,7 +580,7 @@ function postflop(G, p, per, me, la, opps, tilt, say) {
   const rv = aggr ? rival(G, p, aggr) : rival(G, p, p);
   if (per.read && aggr && aggr.cards && aggr.cards.length && n >= 1 && la.toCall >= la.pot * 0.2 && rand() < per.read) {
     const te = trueEquity(G, p, aggr);
-    const right = rand() < per.readAcc + rv.readAccAdj;
+    const right = rand() < (per.readAcc + rv.readAccAdj) * (0.6 + 0.04 * (G.difficulty == null ? 3.4 : G.difficulty));
     const believed = right ? te : 1 - te;
     e = 0.45 * e + 0.55 * believed;
     if (rand() < 0.6) {

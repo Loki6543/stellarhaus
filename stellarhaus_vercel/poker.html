@@ -299,6 +299,16 @@ input[type=range] { width: 100%; accent-color: var(--gold); height: 28px; }
 .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 49; overflow: hidden; }
 .confetti i { position: absolute; top: -20px; width: 8px; height: 14px; animation: fall linear forwards; }
 @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+.final.intro { max-width: 640px; text-align: left; }
+.final.intro h3 { text-align: center; margin-bottom: 14px; }
+.intro-p { display: flex; gap: 14px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--line); animation: annIn .5s both; }
+.intro-p:nth-of-type(2) { animation-delay: .6s; } .intro-p:nth-of-type(3) { animation-delay: 1.2s; }
+.intro-p .nm { font-family: var(--fd); font-size: 1.1rem; letter-spacing: .06em; text-transform: uppercase; }
+.intro-p .nm span { color: var(--dim); font-size: .85rem; }
+.intro-p .sty { font-family: var(--fd); font-size: .75rem; letter-spacing: .14em; color: var(--gold); text-transform: uppercase; }
+.intro-p p { font-size: .85rem; color: var(--dim); margin-top: 4px; }
+.intro-p .sw b { color: var(--ink); }
+.intro-last { font-family: var(--fs); font-size: 1.4rem; text-align: center; margin: 16px 0; color: var(--gold2); animation: annIn .5s 1.8s both; }
 .toast { position: fixed; left: 50%; bottom: 120px; transform: translateX(-50%); z-index: 60; background: var(--panel3); border: 1px solid var(--line2); padding: 10px 16px; border-radius: 12px; font-size: .88rem; box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: annIn .3s; max-width: 92vw; text-align: center; }
 .pausebar { position: absolute; inset: 0; z-index: 15; display: grid; place-items: center; text-align: center; padding: 20px; background: rgba(0,0,0,.5); font-family: var(--fd); letter-spacing: .2em; text-transform: uppercase; font-size: clamp(.95rem, 2.6vw, 1.4rem); color: var(--gold2); pointer-events: none; }
 
@@ -1030,9 +1040,10 @@ function hostStartGame() {
   if (G.phase !== 'lobby') return enterGame();
   W.drawForButton(G);
   W.log(G, 'system', 'Welcome to the final table of the 2027 WSOP Main Event. Shuffle up and deal!',
-    { ann: { type: 'level', title: 'SHUFFLE UP AND DEAL', sub: '2027 MAIN EVENT · FINAL TABLE' } });
+    { ann: { type: 'intro', title: 'INTRODUCING YOUR FINAL TABLE' } });
   enterGame();
-  nextHand();
+  // Give the announcer time to introduce the table before the first deal.
+  S.loopT = setTimeout(nextHand, 15000);
 }
 
 function nextHand() {
@@ -1395,10 +1406,23 @@ function showAnn(a) {
   if (S.ann.length > 3) S.ann = S.ann.filter(x => x.type === 'bust' || x.type === 'champion').concat(S.ann.slice(-1)).slice(-3);
   if (!S.annT) nextAnn();
 }
+function showIntro() {
+  const pros = ['dwan', 'hellmuth', 'negreanu'].map(id => {
+    const P = B.PERSONAS[id];
+    return `<div class="intro-p">${avatarHTML(id, '', 'width:56px;height:56px')}<div><div class="nm">${esc(P.name)} <span>${esc(P.nick)}</span></div>
+      <div class="sty">${esc(P.style)}</div><p>${esc(P.bio)}</p><p class="sw"><b>Strength:</b> ${esc(P.strengths[0])}. <b>Weakness:</b> ${esc(P.weaknesses[0])}.</p></div></div>`;
+  }).join('');
+  $('overlay-host').innerHTML = `<div class="overlay" id="intro"><div class="final intro"><h3>LADIES AND GENTLEMEN, YOUR 2027 MAIN EVENT FINAL TABLE</h3>${pros}
+    <p class="intro-last">…and two unknown poker players, including one female!</p>
+    <button class="btn gold wide" id="intro-go">Shuffle up and deal</button></div></div>`;
+  const close = () => { const o = $('intro'); if (o) o.remove(); };
+  $('intro-go').onclick = close; setTimeout(close, 15000);
+}
 function nextAnn() {
   const host = $('ann-host');
   const a = S.ann.shift();
   if (!a) { S.annT = null; return; }
+  if (a.type === 'intro') { showIntro(); return nextAnn(); }
   host.innerHTML = `<div class="ann ${a.type}"><div class="t">${esc(a.title)}</div><div class="s">${esc(a.sub || '')}</div></div>`;
   const dur = a.type === 'champion' ? 6000 : a.type === 'bust' ? 4200 : 3000;
   S.annT = setTimeout(() => {
@@ -1795,8 +1819,9 @@ function newTable() {
     $('overlay-host').innerHTML = '';
     W.drawForButton(S.G);
     if (CLAUDE_MODE && Cl.db && S.code === 'TABLE') writeMeta();
-    W.log(S.G, 'system', 'A new final table begins. Fresh stacks, same legends.', { ann: { type: 'level', title: 'NEW FINAL TABLE', sub: 'SHUFFLE UP AND DEAL' } });
-    nextHand();
+    W.log(S.G, 'system', 'A new final table begins. Fresh stacks, same legends.', { ann: { type: 'intro', title: 'NEW FINAL TABLE' } });
+    publish();
+    S.loopT = setTimeout(nextHand, 15000);
   };
 }
 
