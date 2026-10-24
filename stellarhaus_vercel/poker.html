@@ -123,6 +123,7 @@ input, select { font: inherit; color: inherit; }
 .felt-logo .c { font-family: var(--fd); font-size: calc(var(--bc) * .15); letter-spacing: .4em; color: rgba(245,215,127,.55); }
 .center { position: absolute; left: 50%; top: 53%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: calc(var(--bc) * .14); }
 .stage.port .center { top: 52%; }
+.pot-top { position: absolute; top: max(4px, .8%); left: 50%; transform: translateX(-50%); z-index: 6; box-shadow: 0 6px 18px rgba(0,0,0,.5); }
 .pot { font-family: var(--fd); text-align: center; background: rgba(0,0,0,.45); border: 1px solid rgba(216,180,90,.35); border-radius: 999px; padding: 4px 16px; white-space: nowrap; }
 .pot .lab { font-size: .68rem; letter-spacing: .24em; color: var(--gold); margin-right: 6px; }
 .pot .amt { font-size: calc(var(--bc) * .3); font-weight: 600; letter-spacing: .04em; }
@@ -546,8 +547,8 @@ input[type=range] { width: 100%; accent-color: var(--gold); height: 28px; }
           <div class="felt-logo"><div class="a">WORLD SERIES OF POKER</div><div class="b">WSOP</div><div class="c">2027 MAIN EVENT</div></div>
         </div>
       </div>
+      <div class="pot pot-top"><span class="lab">POT</span><span class="amt" id="pot-amt">0</span></div>
       <div class="center">
-        <div class="pot"><span class="lab">POT</span><span class="amt" id="pot-amt">0</span></div>
         <div class="board" id="board"></div>
         <div class="sidepots" id="sidepots"></div>
         <div class="table-msg" id="table-msg"></div>
@@ -683,8 +684,8 @@ function fxPulse(id, cls, ms) {
 }
 const fxOn = (id, cls) => (S.fx[id + ':' + cls] || 0) > Date.now();
 const POS = {
-  land: { seat: [[50, 86], [10, 56], [24, 13], [76, 13], [90, 56]], bet: [[50, 67], [25, 57], [34, 33], [66, 33], [75, 57]], d: [[61, 72], [19, 43], [35, 23], [65, 23], [81, 43]] },
-  port: { seat: [[50, 89], [17, 64], [22, 14], [78, 14], [83, 64]], bet: [[50, 74], [27, 56], [30, 31], [70, 31], [73, 56]], d: [[64, 78], [22, 54], [37, 25], [63, 25], [78, 54]] },
+  land: { seat: [[50, 86], [10, 56], [24, 14], [76, 14], [90, 56]], bet: [[50, 70], [24, 57], [34, 34], [66, 34], [76, 57]], d: [[61, 72], [19, 43], [35, 23], [65, 23], [81, 43]] },
+  port: { seat: [[50, 89], [17, 64], [22, 15], [78, 15], [83, 64]], bet: [[50, 70], [39, 60], [31, 33], [69, 33], [61, 60]], d: [[64, 78], [9, 52], [37, 27], [63, 27], [91, 52]] },
 };
 
 /* ── Small utils ──────────────────────────────────────────── */
@@ -838,7 +839,7 @@ function claudeTransport(code, role, onMsg, onStatus) {
     };
     return {
       send: m => {
-        if (m.t === 'state') { st = m.s; flush(); }
+        if (m.t === 'state') { st = m.s; if (st.gid) logBuf = logBuf.filter(e => !e.id || e.id.indexOf(st.gid + ':') === 0); flush(); }
         else if (m.t === 'log') { logBuf = logBuf.concat(m.entries || []).slice(-60); flush(); }
         else if (m.t === 'hole') clWrite(T_HOLE, { gid: m.gid, hand: m.hand, seat: m.seat, cards: m.cards });
       },
@@ -1407,6 +1408,8 @@ function guestReceive(m) {
     case 'state': {
       if (S.view && S.view.gid === m.s.gid && m.s.seq < S.view._seq) return;
       const v = m.s; v._seq = v.seq; v._at = Date.now();
+      // New game: drop the previous game's log on this screen too.
+      if (S.view && S.view.gid !== v.gid) { S.log = []; S.logIds.clear(); S.logCids.clear(); $('pane-log').innerHTML = ''; S.hole = null; }
       if (v.clock) v.clock.end = Date.now() + v.clock.ms;
       S.view = v;
       if (v.phase !== 'lobby' && $('game').classList.contains('hidden')) enterGame();
