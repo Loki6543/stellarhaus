@@ -12,6 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garant:ital,wght@0,600;0,700;1,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
+  color-scheme: dark;
   --bg: #06080c; --ink: #f3efe4; --dim: #a3abb9; --mute: #69727f; --line: rgba(255,255,255,.08); --line2: rgba(255,255,255,.14);
   --gold: #d8b45a; --gold2: #f5d77f; --red: #d0142f; --green: #3ddc97;
   --felt1: #13704f; --felt2: #07402e; --felt3: #042419;
@@ -76,9 +77,9 @@ input, select { font: inherit; color: inherit; }
 .resume { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(216,180,90,.07); border: 1px solid rgba(216,180,90,.25); margin-top: 8px; font-size: .9rem; }
 .fine { color: var(--mute); font-size: .8rem; margin-top: 10px; }
 .lineup { display: grid; gap: 8px; }
-.lineup div { display: flex; align-items: center; gap: 10px; font-size: .9rem; }
+.lineup > div { display: flex; align-items: center; gap: 10px; font-size: .9rem; }
 .lineup b { font-family: var(--fd); font-weight: 500; letter-spacing: .05em; }
-.lineup span { color: var(--dim); font-size: .8rem; }
+.lineup > div > span { color: var(--dim); font-size: .8rem; }
 
 /* ── Game shell ────────────────────────────────────────────── */
 #game { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); height: 100dvh; }
@@ -168,6 +169,7 @@ input, select { font: inherit; color: inherit; }
 .seat.folded .hole { opacity: 0; }
 .seat.out { opacity: .38; filter: grayscale(.8); }
 .seat.winner .pod { border-color: var(--gold2); box-shadow: 0 0 0 2px var(--gold2), 0 0 40px rgba(245,215,127,.45); }
+.mk.ai { background: #2a303b; color: var(--dim); border: 1px solid var(--line2); }
 .seat .hn { margin-top: 3px; font-size: .7rem; color: var(--gold2); text-align: center; max-width: calc(var(--pod) + 30px); line-height: 1.2; min-height: 0; text-shadow: 0 1px 2px #000; }
 .seat.me .nm::after { content: ' · YOU'; color: var(--green); }
 .bet { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 6px; z-index: 2; font-family: var(--fd); font-size: .82rem; font-weight: 500; white-space: nowrap; background: rgba(0,0,0,.5); padding: 2px 9px 2px 3px; border-radius: 999px; transition: opacity .25s; }
@@ -392,9 +394,9 @@ input[type=range] { width: 100%; accent-color: var(--gold); height: 28px; }
 
   <div class="lcard" id="lc-invite" hidden>
     <h2>You’re invited to the final table</h2>
-    <p style="color:var(--dim);font-size:.92rem;margin-bottom:6px">Table code</p>
+    <p style="color:var(--dim);font-size:.92rem;margin-bottom:6px" id="inv-label">Table code</p>
     <div class="bigcode" id="inv-code">—</div>
-    <p class="fine" style="text-align:center;margin-bottom:14px">Your seat is assigned when you connect.</p>
+    <p class="fine" style="text-align:center;margin-bottom:14px" id="inv-fine">Your seat is assigned when you connect.</p>
     <button class="btn gold wide" id="inv-join">Take my seat</button>
     <div class="fine" id="inv-status" style="text-align:center"></div>
   </div>
@@ -406,22 +408,28 @@ input[type=range] { width: 100%; accent-color: var(--gold); height: 28px; }
       <button data-me="firo"><div class="nm">Firo</div><div class="meta">Seat 2 · 3rd in chips</div></button>
     </div>
     <button class="btn gold wide" id="host-btn" disabled>Open the table</button>
-    <div class="or">— OR JOIN —</div>
-    <div class="row">
-      <input class="code-in" id="code-in" maxlength="5" placeholder="CODE" autocomplete="off" autocapitalize="characters">
-      <button class="btn" id="join-btn">Join</button>
+    <p class="fine" id="cl-note" hidden></p>
+    <div id="join-row">
+      <div class="or">— OR JOIN —</div>
+      <div class="row">
+        <input class="code-in" id="code-in" maxlength="5" placeholder="CODE" autocomplete="off" autocapitalize="characters">
+        <button class="btn" id="join-btn">Join</button>
+      </div>
     </div>
     <div id="resumes"></div>
   </div>
 
   <div class="lcard hidden" id="lc-wait">
     <h2 id="wait-title">Table is open</h2>
-    <div class="bigcode" id="wait-code">—</div>
-    <div class="invite" id="invite-link">—</div>
-    <div class="row">
-      <button class="btn wide" id="copy-link">Copy link</button>
-      <button class="btn wide" id="share-link">Share…</button>
+    <div id="wait-link">
+      <div class="bigcode" id="wait-code">—</div>
+      <div class="invite" id="invite-link">—</div>
+      <div class="row">
+        <button class="btn wide" id="copy-link">Copy link</button>
+        <button class="btn wide" id="share-link">Share…</button>
+      </div>
     </div>
+    <div class="invite" id="cl-share" hidden></div>
     <div class="status-list">
       <div><span><span class="dot on" id="st-me-dot"></span><span id="st-me">You</span></span><span id="st-me-r">Seated</span></div>
       <div><span><span class="dot" id="st-op-dot"></span><span id="st-op">Partner</span></span><span id="st-op-r">Waiting…</span></div>
@@ -442,6 +450,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); height: 28px; }
   <div class="lcard">
     <h2>The final five</h2>
     <div class="lineup" id="lineup"></div>
+    <p class="fine">Fan-made game. Dwan, Hellmuth and Negreanu are AI characters modeled on their public playing styles and televised hands; they aren’t affiliated with or endorsed by the players or the WSOP.</p>
     <p class="fine">Blinds go up every 5 hands with a big-blind ante. Four-color deck: <span class="cs s-s">♠&#xFE0E;</span> <span class="cs s-h">♥&#xFE0E;</span> <span class="cs s-d">♦&#xFE0E;</span> <span class="cs s-c">♣&#xFE0E;</span></p>
   </div>
 </section>
@@ -668,6 +677,137 @@ const S = {
   tab: 'log', filter: 'all', unread: 0, sideOpen: false, showOdds: false, lastPhase: '', fx: {},
 };
 
+/* ═══════════ CLAUDE-HOSTED TABLE ═══════════
+   Published as a Claude artifact, the page itself is the table: the host's
+   device writes public state to the artifact's shared store, the guest's moves
+   arrive through room presence (any share level) and, when they can write,
+   an inbox document as well. The host's full game is saved privately. */
+const CLAUDE_MODE = !!(window.claude && typeof window.claude.use === 'function');
+const T_META = 'table/meta', T_STATE = 'table/state', T_HOLE = 'table/hole', T_INBOX = 'table/inbox';
+const Cl = { db: null, user: null, room: null, downloads: null, uid: null, canWrite: null, ready: null, writeDenied: false };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function claudeInit() {
+  if (!CLAUDE_MODE) return Promise.resolve(false);
+  if (!Cl.ready) Cl.ready = (async () => {
+    const use = n => window.claude.use(n).catch(() => null);
+    const [db, user, room, dl] = await Promise.all([use('db'), use('user'), use('room'), use('downloads')]);
+    Object.assign(Cl, { db, user, room, downloads: dl });
+    if (user) { Cl.uid = await user.id(); Cl.canWrite = await user.can('data.write'); }
+    return !!db;
+  })();
+  return Cl.ready;
+}
+// One write in flight per document; a newer body replaces a queued one.
+const clWriters = {};
+function clWrite(path, body) {
+  if (!Cl.db) return;
+  const w = clWriters[path] || (clWriters[path] = { busy: false, next: null });
+  w.next = body;
+  if (w.busy) return;
+  w.busy = true;
+  (async () => {
+    while (w.next) {
+      const b = w.next; w.next = null;
+      try { await Cl.db.doc(path).set(b); Net.status.claude = { ok: true }; }
+      catch (e) {
+        const code = e && e.code;
+        if (code === 'unavailable' || code === 'resource_exhausted') { await sleep(code === 'unavailable' ? 700 : 2500); if (!w.next) w.next = b; }
+        else { Net.status.claude = { ok: false, why: code }; if (code === 'invalid_argument' || code === 'not_granted') Cl.writeDenied = true; }
+      }
+      await sleep(150);
+    }
+    w.busy = false;
+  })();
+}
+function writeMeta(extra) {
+  S.meta = Object.assign({}, S.meta || {}, { open: true, hostSeat: S.me, hostId: Cl.uid || null, gid: S.G ? S.G.gid : null, t: Date.now() }, extra || {});
+  clWrite(T_META, S.meta);
+}
+function claudeTransport(code, role, onMsg, onStatus) {
+  if (!Cl.db) return null;
+  const db = Cl.db, room = Cl.room, subs = [], timers = [];
+  const other = role === 'host' ? 'guest' : 'host';
+  const deliver = m => onMsg(Object.assign({}, m, { code, from: other }), 'claude', null);
+  const seen = new Set(), primed = new Set();
+  const take = (list, prime) => { for (const x of list || []) { if (!x || !x.mid || seen.has(x.mid)) continue; seen.add(x.mid); if (!prime) deliver(x); } };
+  let present = false;
+  if (room) {
+    room.presence({ seat: S.me, role, uid: Cl.uid || null, out: [] }).catch(() => {});
+    subs.push(room.onPeers(ch => {
+      const peers = ch.peers.filter(p => !p.isMe && p.presence && p.presence.role === other);
+      for (const p of peers) {
+        // Moves already in a peer's outbox when we first see them are history, not new.
+        const first = !primed.has(p.peer); primed.add(p.peer);
+        if (role === 'host') take(p.presence.out, first);
+        if (role === 'host' && p.by && S.meta && S.meta.guestId !== p.by) writeMeta({ guestId: p.by });
+      }
+      const was = present; present = peers.length > 0;
+      if (present && !was) deliver({ t: role === 'host' ? 'hello' : 'ping' });
+      onStatus('claude', true);
+    }, () => { S.noPresence = true; }));
+    timers.push(setInterval(() => { if (present) deliver({ t: 'ping' }); }, 3000));
+  } else S.noPresence = true;
+
+  if (role === 'host') {
+    let st = null, logBuf = (S.G && S.G.log || []).slice(-60), lastKey = '', inboxPrimed = false;
+    subs.push(db.doc(T_INBOX).onSnapshot(sn => {
+      const d = sn.exists ? sn.data() : null;
+      take(d && d.msgs, !inboxPrimed); inboxPrimed = true;
+    }, () => {}));
+    const flush = () => {
+      if (!st) return;
+      const last = logBuf.length ? logBuf[logBuf.length - 1].id : '';
+      const key = [st.gid, st.seq, st.paused, st.pauseReason, last, st.guestOnline].join('|');
+      if (key === lastKey) return;                       // heartbeats don't rewrite unchanged state
+      lastKey = key;
+      clWrite(T_STATE, { s: st, log: logBuf, at: Date.now() });
+    };
+    return {
+      send: m => {
+        if (m.t === 'state') { st = m.s; flush(); }
+        else if (m.t === 'log') { logBuf = logBuf.concat(m.entries || []).slice(-60); flush(); }
+        else if (m.t === 'hole') clWrite(T_HOLE, { gid: m.gid, hand: m.hand, seat: m.seat, cards: m.cards });
+      },
+      close: () => { subs.forEach(u => { try { u(); } catch (e) { /* gone */ } }); timers.forEach(clearInterval); },
+      get ok() { return !Cl.writeDenied; },
+    };
+  }
+
+  // Guest: follow the host's documents; send moves through presence (+ inbox when allowed).
+  let firstState = true;
+  subs.push(db.doc(T_META).onSnapshot(sn => {
+    const m = sn.exists ? JSON.parse(JSON.stringify(sn.data())) : null;
+    S.meta = m;
+    if (m && m.open) deliver({ t: 'welcome', hostSeat: m.hostSeat, guestSeat: OTHER[m.hostSeat], started: false });
+    else if (S.welcome) toast('The table was closed.');
+  }, () => {}));
+  subs.push(db.doc(T_STATE).onSnapshot(sn => {
+    if (!sn.exists) return;
+    const d = JSON.parse(JSON.stringify(sn.data()));
+    if (S.meta && d.s && S.meta.gid && d.s.gid !== S.meta.gid) return;   // leftover from an older table
+    if (d.s) deliver({ t: 'state', s: d.s });
+    if (d.log) deliver({ t: firstState ? 'logsync' : 'log', entries: d.log });
+    firstState = false;
+    onStatus('claude', true);
+  }, () => {}));
+  subs.push(db.doc(T_HOLE).onSnapshot(sn => { if (sn.exists) deliver(Object.assign({ t: 'hole' }, JSON.parse(JSON.stringify(sn.data())))); }, () => {}));
+  const outbox = [];
+  let warned = false;
+  return {
+    send: m => {
+      if (['act', 'show', 'chat', 'pause'].indexOf(m.t) < 0) return;
+      const x = Object.assign({}, m, { mid: uid() + uid() }); delete x.from; delete x.code;
+      outbox.push(x); while (outbox.length > 8) outbox.shift();
+      if (room) room.presence({ out: outbox.slice() }).catch(() => {});
+      const canWrite = Cl.canWrite !== false && !Cl.writeDenied;
+      if (canWrite) clWrite(T_INBOX, { msgs: outbox.slice(), at: Date.now() });
+      if (!room && !canWrite && !warned) { warned = true; toast('Your moves can’t reach the table from this view. Ask the host to share the page with you as an Editor.', 6000); }
+    },
+    close: () => { subs.forEach(u => { try { u(); } catch (e) { /* gone */ } }); timers.forEach(clearInterval); },
+    get ok() { return true; },
+  };
+}
+
 /* ═══════════ NETWORK ═══════════
    Host-authoritative: the host's browser runs the dealer and the bots.
    Transports: PeerJS (WebRTC, with TURN relays) + Supabase Realtime broadcast.
@@ -679,6 +819,7 @@ const Net = {
     this.code = code; this.role = role;
     const on = (m, via, conn) => onMessage(m, via, conn);
     const st = (via, ok, why) => { this.status[via] = { ok, why }; renderConn(); };
+    if (CLAUDE_MODE) { this.tr = [claudeTransport(code, role, on, st)].filter(Boolean); return; }
     const p = p2pTransport(code, role, on, st), r = relayTransport(code, role, on, st), s = sbTransport(code, on, st);
     this.tr = [p, r, s].filter(Boolean);
   },
@@ -687,7 +828,8 @@ const Net = {
   sendConn(conn, m) { m.from = this.role; m.code = this.code; try { conn ? conn.send(m) : this.send(m); } catch (e) { /* closed */ } },
   get up() { return this.tr.some(t => t.ok); },
   label() {
-    const p = this.status.p2p, r = this.status.relay, s = this.status.sb;
+    const p = this.status.p2p, r = this.status.relay, s = this.status.sb, c = this.status.claude;
+    if (CLAUDE_MODE) return !this.tr.length ? 'Practice (this device)' : (c && c.ok === false ? 'Table link interrupted' : 'Live on Claude');
     const up = [p && p.ok && 'P2P', r && r.ok && 'relay', s && s.ok && 'realtime'].filter(Boolean);
     if (up.length) return up.join(' + ') + ' link';
     if (p && p.why === 'busy') return 'Reclaiming table…';
@@ -830,7 +972,7 @@ function onMessage(m, via, conn) {
 
 /* ═══════════ HOST ═══════════ */
 function hostSeatIdx(id) { return S.G.players.findIndex(p => p.id === id); }
-function guestOnline() { return Date.now() - S.guestSeen < 14000; }
+function guestOnline() { return S.noPresence || Date.now() - S.guestSeen < 14000; }
 function isAuto(p) {
   if (p.kind === 'bot') return true;
   if (p.id === S.me) return false;
@@ -841,9 +983,10 @@ function pace(ms) {
   return ms * S.settings.pace * (humansIn ? 1 : 0.3);
 }
 
-function hostCreate(code) {
+// saved: undefined → look on this device; null → fresh table; object → resume it.
+function hostCreate(code, saved) {
   S.role = 'host'; S.code = code;
-  const saved = store.get('wsop27.host.' + code, null);
+  if (saved === undefined) saved = store.get('wsop27.host.' + code, null);
   if (saved && saved.G) { S.G = saved.G; S.me = saved.me; S.settings = Object.assign(S.settings, saved.settings || {}); }
   else {
     S.G = W.newGame(SEATS); S.G.paused = false;
@@ -980,7 +1123,11 @@ function scheduleSave() {
 }
 function saveNow() {
   clearTimeout(S.saveT); S.saveT = null;
-  if (S.role === 'host' && S.G) store.set('wsop27.host.' + S.code, { G: S.G, me: S.me, settings: S.settings, t: Date.now() });
+  if (S.role !== 'host' || !S.G) return;
+  const rec = { G: S.G, me: S.me, settings: S.settings, t: Date.now() };
+  store.set('wsop27.host.' + S.code, rec);
+  // On Claude the host's full game (deck, every hand) lives in their private corner of the store.
+  if (CLAUDE_MODE && Cl.db && Cl.uid && S.code === 'TABLE') clWrite('data/users/' + Cl.uid + '/save', Object.assign({}, rec, { G: Object.assign({}, S.G, { log: S.G.log.slice(-250) }) }));
 }
 
 function hostView(viewer) {
@@ -1221,14 +1368,20 @@ function applyFilter() {
   const f = S.filter;
   $('pane-log').querySelectorAll('.le').forEach(el => { el.style.display = f === 'all' || el.dataset.k === f ? '' : 'none'; });
 }
-function downloadLog() {
+async function downloadLog() {
   const lines = S.log.map(e => {
     const n = e.who && SHORT[e.who] ? SHORT[e.who] : '';
     if (e.kind === 'hand') return '\n' + e.text;
     if (e.kind === 'talk' || e.kind === 'chat') return `  [chat] ${n}: ${e.text}`;
     return '  ' + e.text;
   });
-  const blob = new Blob(['WSOP 2027 Main Event — Final Table\nTable ' + S.code + '\n' + lines.join('\n')], { type: 'text/plain' });
+  const text = 'WSOP 2027 Main Event — Final Table\nTable ' + S.code + '\n' + lines.join('\n');
+  if (CLAUDE_MODE) {
+    if (!Cl.downloads) return toast('Saving files isn’t available in this view.');
+    try { await Cl.downloads.save({ filename: 'wsop2027-final-table.txt', data: text }); } catch (e) { if (e && e.code === 'unavailable') toast('Saving files isn’t available in this view.'); }
+    return;
+  }
+  const blob = new Blob([text], { type: 'text/plain' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `wsop2027-final-table-${S.code}.txt`; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
@@ -1271,7 +1424,7 @@ function seatView(seat) { const mi = Math.max(0, myIdx()); return (seat - mi + 5
 
 function renderConn() {
   const el = $('h-conn');
-  const online = S.role === 'host' ? guestOnline() : Date.now() - S.hostSeen < 14000;
+  const online = S.role === 'host' ? guestOnline() : (S.noPresence || Date.now() - S.hostSeen < 14000);
   const other = S.role === 'host' ? SHORT[OTHER[S.me]] : (S.welcome ? SHORT[S.welcome.hostSeat] : 'host');
   const up = Net.up;
   el.innerHTML = `<span class="dot ${online ? 'on' : up ? 'warn' : ''}"></span>${online ? other + ' online' : up ? 'Waiting for ' + other : Net.label()}`;
@@ -1283,7 +1436,7 @@ function render() {
   renderHud(v); renderSeats(v); renderCenter(v); renderDock(v);
   if (S.tab === 'stand') renderStandings(v);
   if (S.tab === 'scout') renderScout(v);
-  const hostGone = S.role === 'guest' && S.welcome && Date.now() - S.hostSeen > 15000;
+  const hostGone = S.role === 'guest' && S.welcome && !S.noPresence && Date.now() - S.hostSeen > 15000;
   $('pausebar').classList.toggle('hidden', !v.paused && !hostGone);
   $('pausebar').textContent = hostGone ? `Waiting for ${SHORT[S.welcome.hostSeat]}’s connection…` : (v.pauseReason || 'PAUSED');
   $('b-pause').classList.toggle('on', !!v.paused);
@@ -1343,7 +1496,7 @@ function renderSeats(v) {
         hole = cards.map(c => cardHTML(c, hlSet && hlSet.has(c) ? 'hl' : '')).join('');
       } else if (p.hasCards) hole = cardHTML(null) + cardHTML(null);
     }
-    const markers = (v.sb === i && !p.out && v.handNo ? '<span class="mk sb">SB</span>' : '') + (v.bb === i && !p.out && v.handNo ? '<span class="mk bb">BB</span>' : '');
+    const markers = (p.kind === 'bot' ? '<span class="mk ai" title="AI player">AI</span>' : '') + (v.sb === i && !p.out && v.handNo ? '<span class="mk sb">SB</span>' : '') + (v.bb === i && !p.out && v.handNo ? '<span class="mk bb">BB</span>' : '');
     const bb = v.level.bb;
     const tag = p.out ? `${W.ordinal(p.place)} · ${W.money(p.prize)}` : gains[i] && showWin ? `+${fmt(gains[i])}` : p.allIn ? 'ALL IN' : p.last;
     const tagCls = p.out ? '' : gains[i] && showWin ? 'win' : p.allIn ? 'allin' : '';
@@ -1636,6 +1789,7 @@ function showFinal(v) {
     S.G = W.newGame(SEATS); S.G.paused = false; S.lastHoleSent = ''; S.clock = null; S.sentLog = 0;
     $('overlay-host').innerHTML = '';
     W.drawForButton(S.G);
+    if (CLAUDE_MODE && Cl.db && S.code === 'TABLE') writeMeta();
     W.log(S.G, 'system', 'A new final table begins. Fresh stacks, same legends.', { ann: { type: 'level', title: 'NEW FINAL TABLE', sub: 'SHUFFLE UP AND DEAL' } });
     nextHand();
   };
@@ -1643,6 +1797,7 @@ function showFinal(v) {
 
 /* ═══════════ SCREENS ═══════════ */
 function setUrl(code) {
+  if (CLAUDE_MODE) return;
   try { const u = new URL(location.href); u.searchParams.set('table', code); history.replaceState(null, '', u); } catch (e) { /* file:// */ }
 }
 function inviteUrl() {
@@ -1667,6 +1822,7 @@ function showWaitHost() {
   $('invite-link').textContent = inviteUrl();
   $('opt-clock').value = S.settings.clock; $('opt-pace').value = S.settings.pace; $('opt-absent').value = S.settings.absent;
   $('wait-note').textContent = `Send ${SHORT[OTHER[S.me]]} the link — it works across Wi-Fi and cellular, anywhere. Keep this page open while you play: your device deals the cards. If either connection drops, the game pauses until you're both back.`;
+  claudeWaitLayout(true);
   renderWait();
 }
 function showWaitGuest() {
@@ -1677,14 +1833,25 @@ function showWaitGuest() {
   $('wait-code').textContent = S.code;
   $('invite-link').textContent = inviteUrl();
   $('wait-note').textContent = `Waiting for ${S.welcome ? SHORT[S.welcome.hostSeat] : 'the host'} to deal the first hand…`;
+  claudeWaitLayout(false);
   renderWait();
+}
+function claudeWaitLayout(isHost) {
+  if (!CLAUDE_MODE) return;
+  $('wait-link').hidden = true;
+  const box = $('cl-share');
+  if (S.code !== 'TABLE') { box.hidden = false; box.textContent = 'Practice table on this device: the other seat plays itself.'; return; }
+  box.hidden = !isHost;
+  const o = SHORT[OTHER[S.me]];
+  box.textContent = `Invite ${o}: use the Share button at the top of this page and add ${o}'s email. When ${o} opens the page, the lobby offers ${o}'s seat.`;
+  if (isHost) $('wait-note').textContent = `Keep this page open while you play: your device deals the cards. If ${o}'s connection drops, the game pauses until ${o} is back.`;
 }
 function renderWait() {
   if ($('lc-wait').classList.contains('hidden')) return;
   const meName = SHORT[S.me] || 'You', other = OTHER[S.me];
   $('st-me').textContent = meName + ' (this device)';
   $('st-op').textContent = SHORT[other] || 'Partner';
-  const online = S.role === 'host' ? guestOnline() : !!S.welcome && Date.now() - S.hostSeen < 14000;
+  const online = S.role === 'host' ? guestOnline() : !!S.welcome && (S.noPresence || Date.now() - S.hostSeen < 14000);
   $('st-op-dot').className = 'dot' + (online ? ' on' : '');
   $('st-op-r').textContent = online ? 'Connected' : 'Waiting…';
   $('st-net-dot').className = 'dot' + (Net.up ? ' on' : ' warn');
@@ -1720,6 +1887,7 @@ function initLobby() {
   };
   $('leave-wait').onclick = () => { Net.stop(); location.href = location.pathname; };
 
+  if (CLAUDE_MODE) { claudeLobby(); return; }
   // Saved host tables on this device
   const saves = [];
   try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.indexOf('wsop27.host.') === 0) { const s = store.get(k); if (s && s.G) saves.push({ code: k.slice(12), s }); } } } catch (e) { /* storage blocked */ }
@@ -1743,6 +1911,81 @@ function initLobby() {
     }
   }
 }
+// Claude-hosted lobby: the page is the table, so there are no codes or links.
+async function claudeLobby() {
+  $('join-row').hidden = true; $('resumes').hidden = true;
+  const note = $('cl-note'); note.hidden = false; note.textContent = 'Connecting to the table…';
+  $('host-btn').disabled = true;
+  $('leave-wait').onclick = () => {
+    if (S.role === 'host' && S.code === 'TABLE' && S.G && S.G.phase === 'lobby') writeMeta({ open: false });
+    setTimeout(() => location.reload(), 300);
+  };
+  const ok = await claudeInit();
+  if (!ok) {
+    note.textContent = 'Sign in to claude.ai to sit at the shared table. You can still play a practice game here, with the other seat on autopilot.';
+    $('host-btn').textContent = 'Practice on this device';
+    $('host-btn').disabled = !S.me;
+    $('host-btn').onclick = () => { if (!S.me) return; S.settings.absent = 'autopilot'; hostCreate('PRACTICE', null); showWaitHost(); $('opt-absent').value = 'autopilot'; };
+    return;
+  }
+  const decide = () => {
+    if (S.role) return;
+    const m = S.meta;
+    if (m && m.open && m.hostId && m.hostId === Cl.uid) { claudeResumeHost(); return; }
+    if (m && m.open) {
+      const seat = OTHER[m.hostSeat];
+      $('lc-start').classList.add('hidden'); $('lc-invite').hidden = false;
+      $('inv-label').textContent = 'At the table now';
+      $('inv-code').textContent = SHORT[m.hostSeat];
+      $('inv-fine').textContent = `You'll play as ${SHORT[seat]}, ${seat === 'firo' ? 'third in chips' : 'the short stack'}.`;
+      $('inv-join').textContent = `Take ${SHORT[seat]}'s seat`;
+      $('inv-join').disabled = false;
+      $('inv-join').onclick = () => {
+        Sound.init(); $('inv-join').disabled = true; $('inv-status').textContent = 'Taking your seat…';
+        store.set('wsop27.guest.TABLE', { t: Date.now() });
+        guestJoin('TABLE');
+      };
+      if ((m.guestId && m.guestId === Cl.uid) || store.get('wsop27.guest.TABLE', null)) $('inv-join').click();
+      return;
+    }
+    $('lc-invite').hidden = true; $('lc-start').classList.remove('hidden');
+    if (Cl.canWrite === false) {
+      note.textContent = 'The table isn’t open yet. Ask the person who shared this page to open it; your seat appears here when they do.';
+      $('host-btn').disabled = true;
+      return;
+    }
+    note.textContent = 'Whoever opens the table deals from their device. Then share this page with your partner using the Share button at the top.';
+    $('host-btn').disabled = !S.me;
+  };
+  $('host-btn').onclick = () => {
+    if (!S.me) return;
+    Sound.init();
+    hostCreate('TABLE', null);
+    writeMeta({ guestId: null });
+    showWaitHost();
+  };
+  let got = false;
+  Cl.db.doc(T_META).onSnapshot(sn => { S.meta = sn.exists ? JSON.parse(JSON.stringify(sn.data())) : null; got = true; decide(); },
+    () => { note.textContent = 'Couldn’t reach the table. Reload the page to try again.'; });
+  setTimeout(() => { if (!got) note.textContent = 'Still connecting to the table…'; }, 6000);
+}
+async function claudeResumeHost() {
+  if (S.role) return;
+  S.role = 'pending';
+  let saved = null;
+  try { const sn = await Cl.db.doc('data/users/' + Cl.uid + '/save').get(); if (sn.exists) saved = JSON.parse(JSON.stringify(sn.data())); } catch (e) { /* fall back below */ }
+  if (!saved || !saved.G) saved = store.get('wsop27.host.TABLE', null);
+  if (saved && saved.G && S.meta && S.meta.gid && saved.G.gid !== S.meta.gid) saved = store.get('wsop27.host.TABLE', null);
+  S.role = null;
+  if (saved && saved.me) S.me = saved.me;
+  if (!S.me && S.meta) S.me = S.meta.hostSeat;
+  hostCreate('TABLE', saved && saved.G ? saved : null);
+  writeMeta();
+  Sound.init();
+  if (S.G.phase === 'lobby') showWaitHost();
+  else { enterGame(); afterChange(); }
+}
+
 function resumeHost(code) {
   Sound.init();
   hostCreate(code);
