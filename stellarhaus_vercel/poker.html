@@ -344,6 +344,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); height: 28px; }
 .hchart div { aspect-ratio: 1; display: grid; place-items: center; border-radius: 3px; color: #0a0a0a; }
 .hchart .t1 { background: #3ddc97; } .hchart .t2 { background: #8fd14f; } .hchart .t3 { background: #f0b429; } .hchart .t4 { background: #ff6b6b88; }
 .hchart .me { outline: 2px solid #fff; z-index: 1; }
+.pod .nm .flag { margin-right: 4px; font-size: .85em; letter-spacing: 0; }
 .toast { position: fixed; left: 50%; bottom: 120px; transform: translateX(-50%); z-index: 60; background: var(--panel3); border: 1px solid var(--line2); padding: 10px 16px; border-radius: 12px; font-size: .88rem; box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: annIn .3s; max-width: 92vw; text-align: center; }
 .pausebar { position: absolute; inset: 0; z-index: 15; display: grid; place-items: center; text-align: center; padding: 20px; background: rgba(0,0,0,.5); font-family: var(--fd); letter-spacing: .2em; text-transform: uppercase; font-size: clamp(.95rem, 2.6vw, 1.4rem); color: var(--gold2); pointer-events: none; }
 
@@ -621,6 +622,7 @@ const SEATS = [
 ];
 const COLORS = { kevin: '#3ddc97', firo: '#ff6b4a', dwan: '#3fa7ff', hellmuth: '#e8c15a', negreanu: '#b48cff' };
 const INITIALS = { kevin: 'K', firo: 'F', dwan: 'TD', hellmuth: 'PH', negreanu: 'DN' };
+const FLAGS = { kevin: '🇺🇸', firo: '🇩🇪', dwan: '🇺🇸', hellmuth: '🇺🇸', negreanu: '🇨🇦' };
 const SHORT = { kevin: 'Kevin', firo: 'Firo', dwan: 'Dwan', hellmuth: 'Hellmuth', negreanu: 'Negreanu' };
 const OTHER = { kevin: 'firo', firo: 'kevin' };
 const teeth = (y, h) => [0, 1, 2, 3, 4, 5].map(k => `<rect x="${10.2 + k * 3.35}" y="${y}" width="2.9" height="${h}" rx="1" fill="#fffdf6"/>`).join('');
@@ -1550,7 +1552,7 @@ function showAnn(a) {
 function showIntro() {
   const pros = ['dwan', 'hellmuth', 'negreanu'].map(id => {
     const P = B.PERSONAS[id];
-    return `<div class="intro-p">${avatarHTML(id, '', 'width:56px;height:56px')}<div><div class="nm">${esc(P.name)} <span>${esc(P.nick)}</span></div>
+    return `<div class="intro-p">${avatarHTML(id, '', 'width:56px;height:56px')}<div><div class="nm">${FLAGS[id]} ${esc(P.name)} <span>${esc(P.nick)}</span></div>
       <div class="sty">${esc(P.style)}</div><p>${esc(P.bio)}</p><p class="sw"><b>Strength:</b> ${esc(P.strengths[0])}. <b>Weakness:</b> ${esc(P.weaknesses[0])}.</p></div></div>`;
   }).join('');
   $('overlay-host').innerHTML = `<div class="overlay" id="intro"><div class="final intro"><h3>LADIES AND GENTLEMEN, YOUR 2027 MAIN EVENT FINAL TABLE</h3>${pros}
@@ -1628,7 +1630,7 @@ function renderTop(v) {
   const live = v.players.filter(p => !p.out).sort((a, b) => b.stack - a.stack);
   const out = v.players.filter(p => p.out).sort((a, b) => a.place - b.place);
   $('topstrip').innerHTML = `<span class="ts-pay">1st place · ${W.money(v.payouts[0])} · winner take all</span>` +
-    live.map((p, i) => `<span class="ts-p"><span class="rk">${i + 1}</span>${miniHTML(p.id)}${esc(SHORT[p.id])} <b>${fmt(p.stack)}</b></span>`).join('') +
+    live.map((p, i) => `<span class="ts-p"><span class="rk">${i + 1}</span>${miniHTML(p.id)}${FLAGS[p.id] || ''} ${esc(SHORT[p.id])} <b>${fmt(p.stack)}</b></span>`).join('') +
     out.map(p => `<span class="ts-p out"><span class="rk">${W.ordinal(p.place)}</span>${miniHTML(p.id)}${esc(SHORT[p.id])}</span>`).join('');
 }
 // Heads-up all-in "showdown cam": both hands, live odds every street.
@@ -1642,7 +1644,7 @@ function renderCam(v) {
     const cards = p.cards || (p.id === S.me ? myCards(v) : null) || [];
     const eq = v.equity && v.equity[p.seat] != null ? v.equity[p.seat] : (won.has(p.seat) ? 100 : 0);
     return `<div class="cam-p ${won.has(p.seat) && v.phase === 'handEnd' ? 'won' : ''}">${avatarHTML(p.id, '', 'width:46px;height:46px')}
-      <div class="cam-n">${esc(SHORT[p.id])}</div><div class="cam-c">${cards.map(c => cardHTML(c)).join('')}</div>
+      <div class="cam-n">${FLAGS[p.id] || ''} ${esc(SHORT[p.id])}</div><div class="cam-c">${cards.map(c => cardHTML(c)).join('')}</div>
       <div class="cam-e">${v.phase === 'handEnd' ? (won.has(p.seat) ? 'WINS' : '') : eq.toFixed(1) + '%'}</div>
       <div class="cam-bar"><i style="width:${Math.max(2, eq)}%"></i></div></div>`;
   };
@@ -1705,7 +1707,7 @@ function renderSeats(v) {
       fxOn(p.id, 'talking') || (acting && p.id === 'negreanu') ? 'talking' : ''].filter(Boolean).join(' ');
     const html = `${mood}<div class="hole">${hole}</div>
       <div class="pod"><div class="markers">${markers}</div>${avatarHTML(p.id, avc)}
-      <div class="info"><div class="nm">${esc(S.port ? SHORT[p.id] : p.name)}${auto}</div><div class="stk">${p.out ? '—' : fmt(p.stack)}<small>${p.out ? '' : Math.round(p.stack / bb) + ' BB'}</small></div></div></div>
+      <div class="info"><div class="nm"><span class="flag">${FLAGS[p.id] || ''}</span>${esc(S.port ? SHORT[p.id] : p.name)}${auto}</div><div class="stk">${p.out ? '—' : fmt(p.stack)}<small>${p.out ? '' : Math.round(p.stack / bb) + ' BB'}</small></div></div></div>
       <div class="timer"><i id="tm-${i}"></i></div>${eq}
       <div class="tag ${tagCls}">${esc(tag || '')}</div>${hn}`;
     // Rebuild only on change so avatar animations aren't restarted by every state update.
