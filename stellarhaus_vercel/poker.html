@@ -1994,10 +1994,11 @@ function newTable() {
     clearTimeout(S.loopT);
     S.G = W.newGame(SEATS); S.G.paused = false; S.lastHoleSent = ''; S.clock = null; S.sentLog = 0;
     $('overlay-host').innerHTML = '';
-    W.drawForButton(S.G);
+    // Back to the table's waiting room: both players re-seat, then the host deals.
     if (CLAUDE_MODE && Cl.db && S.code === 'TABLE') writeMeta();
-    W.log(S.G, 'system', 'A new final table begins. Fresh stacks, same legends.', { ann: { type: 'intro', title: 'NEW FINAL TABLE' } });
-    S.G.phase = 'intro'; S.G.introUntil = Date.now() + 15000; afterChange();
+    S.log = []; S.logIds.clear(); $('pane-log').innerHTML = '';
+    S.G.seq++; publish(); saveNow();
+    leaveGameScreen(); showWaitHost();
   };
 }
 
@@ -2031,7 +2032,11 @@ function showWaitHost() {
   claudeWaitLayout(true);
   renderWait();
 }
+function leaveGameScreen() {
+  $('game').classList.add('hidden'); $('lobby').classList.remove('hidden'); $('overlay-host').innerHTML = '';
+}
 function showWaitGuest() {
+  if (!$('game').classList.contains('hidden') && S.view && S.view.phase === 'lobby') leaveGameScreen();
   if (!$('game').classList.contains('hidden')) return;
   $('lc-start').classList.add('hidden'); $('lc-invite').hidden = true; $('lc-wait').classList.remove('hidden');
   $('host-opts').classList.add('hidden');
