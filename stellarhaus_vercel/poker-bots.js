@@ -44,7 +44,7 @@ const PERSONAS = {
     open: 0.20, limp: 0.30, callWide: 1.45, threeBet: 0.05, threeBetBluff: 0.04, cbet: 0.60, barrel: 0.30,
     bluff: 0.14, semi: 0.55, valueRel: 1.18, raiseRel: 1.65, callAdj: -0.01, allinAdj: 0.02, loose: 1.1,
     value: [0.8, 1.0], medium: [0.33, 0.4], bluffSize: [0.33, 0.4], openBB: 2.2, think: [800, 2900],
-    read: 0.45, readAcc: 0.82,
+    read: 0.35, readAcc: 0.76,
   },
   auto: {
     id: 'auto', name: 'Autopilot', short: 'Auto', nick: '', initials: 'AP', color: '#9aa4b2',
@@ -92,6 +92,96 @@ const LINES = {
     chat: ['Haha, I love the table talk!', 'You’re a tough read, I’ll give you that.', 'I think you’re bluffing right now. In the chat.', 'Good vibes at this table!'],
   },
 };
+/* ── Rivalry files ─────────────────────────────────────────
+   Seeded from real televised hands between these three, then
+   reshaped live by the head-to-head ledger at this table.
+   adj keys: bluffMul · valueAdj (thinner value) · callAdj (− = calls lighter)
+   threeBetMul · floatAdj (flop/turn calls) · riverCallAdj · trap (slow-play
+   big pairs vs them) · tiltMul · isoMul (attack their limps) · readAccAdj
+   sizeMul · bluffPrior · tiltPounce / tiltTarget (when Hellmuth is tilting) */
+const RIVALRY = {
+  dwan: {
+    hellmuth: {
+      title: 'Has cracked his aces twice',
+      hands: [
+        'Poker After Dark: 4-bet Hellmuth light, then moved all-in for $120K on the river with the ten Hellmuth feared — Hellmuth called with 9-7 and lost a pot of almost $330K.',
+        '2008 NBC Heads-Up Championship: busted Hellmuth with pocket tens against pocket aces.',
+        'High Stakes Duel III, Round 2 (2021): cracked Hellmuth’s slow-played A♥ A♣ with 9♠ 3♣ — his first loss on the show.',
+      ],
+      plan: 'Value-bets him thin and big because Hellmuth calls polarized shoves. 3-bets his opens light. Bluffs him less on the river, and isolates him when he tilts.',
+      adj: { valueAdj: 0.08, bluffMul: 0.8, threeBetMul: 1.6, sizeMul: 1.2, tiltTarget: 1.6 },
+      taunt: ['Same as Poker After Dark, Phil.', 'You knew I had it, didn’t you Phil?', 'Thought you’d have learned by now, Phil.'],
+      gripe: ['Okay Phil, you got me that time.', 'Revenge round, huh Phil?'],
+    },
+    negreanu: {
+      title: 'Hero-called him with nine-high',
+      hands: [
+        'High Stakes Poker, Season 6: called Negreanu’s $28,200 river bet with 9♥ 5♥, reading a missed straight draw — Negreanu had floated with K♠ 10♠ and turned top pair.',
+        'High Stakes Poker, Season 6: rivered two pair to take a pot from Negreanu’s top pair.',
+      ],
+      plan: 'Bluffs him less (Daniel floats), value-bets thinner, and still can’t resist hero-calling his river bets.',
+      adj: { bluffMul: 0.6, valueAdj: 0.06, riverCallAdj: -0.06 },
+      taunt: ['Floating me doesn’t work every time, Daniel.', 'Not a float this time, huh Daniel?'],
+      gripe: ['If you can float that, my call was terrible.', 'You floated me again?'],
+    },
+  },
+  hellmuth: {
+    dwan: {
+      title: 'Knows he bluffs — calls him anyway',
+      hands: [
+        'Poker After Dark: called Dwan’s $120K river shove with 9-7 and lost a pot of almost $330K.',
+        'Lost pocket aces to Dwan in 2008 (NBC Heads-Up) and again in 2021 (High Stakes Duel III).',
+        'High Stakes Duel III, Round 3 (2022): got his revenge and beat Dwan heads-up.',
+      ],
+      plan: 'Calls Dwan down light, slow-plays big pairs to trap him — and tilts faster when Dwan takes a pot off him.',
+      adj: { callAdj: -0.08, trap: 0.5, tiltMul: 1.5 },
+      taunt: ['Not this time, durrrr. Not this time.', 'Remember High Stakes Duel round three? This is that.'],
+      gripe: ['You cracked my aces on NBC and you’re STILL doing this to me?!', 'How does this kid keep getting there against me?!'],
+    },
+    negreanu: {
+      title: 'Swept him 3–0',
+      hands: [
+        'High Stakes Duel II (2021): beat Negreanu in all three matches — including a comeback from roughly 9-to-1 down and a runner-runner flush to close Round 2.',
+      ],
+      plan: 'Plays more pots against him, isolates his limps and value-bets thin. Rarely bluffs him — Daniel calls.',
+      adj: { isoMul: 1.3, valueAdj: 0.06, bluffMul: 0.5 },
+      taunt: ['That’s four in a row, Daniel. Check the tapes.', 'Three-oh in the Duel, and now this.'],
+      gripe: ['Enjoy it, Daniel. It doesn’t happen often against me.', 'Daniel got lucky. Write it down, it’s rare.'],
+    },
+  },
+  negreanu: {
+    hellmuth: {
+      title: '0–3 in High Stakes Duel II',
+      hands: [
+        'High Stakes Duel II (2021): lost all three matches to Hellmuth, including blowing a roughly 9-to-1 chip lead.',
+      ],
+      plan: 'Respects calm Hellmuth’s bets and folds more — but pounces when Phil tilts. Reads him better than anyone.',
+      adj: { callAdj: 0.04, tiltPounce: -0.08, readAccAdj: 0.06 },
+      taunt: ['Finally! Phil, I needed that one.', 'Put that one in your book, Phil.'],
+      gripe: ['Phil, you owe me a rematch. A real one.', 'Of course. Of course it’s Phil again.'],
+    },
+    dwan: {
+      title: 'Floats his c-bets',
+      hands: [
+        'High Stakes Poker, Season 6: floated Dwan’s flop bet with two overcards, turned top pair, and got hero-called by nine-high.',
+        'High Stakes Poker: folded K♦ 4♦ in the family pot where Dwan’s Q♦ 10♦ pushed Barry Greenstein off pocket aces.',
+      ],
+      plan: 'Floats Dwan’s flop and turn bets with overcards and assumes he’s bluffing more often.',
+      adj: { floatAdj: -0.06, bluffPrior: 0.15 },
+      taunt: ['I knew you were full of it, Tom!', 'Floated you again, Tom. Overcards are live!'],
+      gripe: ['You had it this time, huh Tom?', 'I knew it and I still paid you.'],
+    },
+  },
+};
+const RIVALRY_SOURCES = [
+  { label: 'PokerListings — Dwan paints Phil a river masterpiece', url: 'https://www.pokerlistings.com/hand-analysis/dwan-paints-phil-a-river-masterpiece' },
+  { label: 'PokerNews — Dwan cracks Hellmuth’s aces again (High Stakes Duel III)', url: 'https://www.pokernews.com/news/2021/08/tom-dwan-beats-phil-hellmuth-high-stakes-duel-39704.htm' },
+  { label: 'PokerNews — Hellmuth outplays Dwan in Round 3', url: 'https://www.pokernews.com/news/2022/01/phil-hellmuth-tom-dwan-poker-2-40610.htm' },
+  { label: 'Card Player — Hellmuth sweeps Negreanu in High Stakes Duel II', url: 'https://www.cardplayer.com/cardplayer-poker-magazines/66467-joao-vieira-34-16/articles/24296-phil-hellmuth-sweeps-daniel-negreanu-in-three-straight-matches-to-win-high-stakes-duel-ii' },
+  { label: 'PokerNews — High Stakes Poker S6E13 (nine-high hero call)', url: 'https://www.pokernews.com/news/2010/05/high-stakes-poker-season-6-episode-13-expensive-brawls-hero-8277.htm' },
+  { label: 'PokerListings — Dwan makes the impossible possible on HSP', url: 'https://www.pokerlistings.com/hand-analysis/dwan-makes-impossible-possible-on-high-stakes-poker' },
+];
+
 const pick = a => a[Math.floor(rand() * a.length)];
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 
@@ -126,6 +216,37 @@ const playPct = (c1, c2) => PLAY_PCT[W.pfIndex(c1, c2)];
 /* ── Opponent modeling ─────────────────────────────────────── */
 function persona(p) { return PERSONAS[p.persona] || PERSONAS.auto; }
 function mem(G, id) { return G.bot[id] || (G.bot[id] = { tilt: 0, mood: '', wild: false, stuck: 0, lastTalk: 0 }); }
+function file(me, opp) { return (RIVALRY[me.persona] && RIVALRY[me.persona][opp.persona]) || null; }
+const ledger = (G, a, b) => (G.h2h && G.h2h[a + '>' + b]) || { faced: 0, fold: 0, sd: 0, won: 0, caught: 0, shownBluff: 0, net: 0 };
+
+// How `me` plays against `opp`: real-history rivalry priors + this table's head-to-head ledger.
+function rival(G, me, opp) {
+  const f = file(me, opp), b = f ? f.adj : {};
+  const out = {
+    bluffMul: b.bluffMul || 1, valueAdj: b.valueAdj || 0, callAdj: b.callAdj || 0, threeBetMul: b.threeBetMul || 1,
+    floatAdj: b.floatAdj || 0, riverCallAdj: b.riverCallAdj || 0, trap: b.trap || 0, tiltMul: b.tiltMul || 1,
+    isoMul: b.isoMul || 1, readAccAdj: b.readAccAdj || 0, sizeMul: b.sizeMul || 1, bluffPrior: b.bluffPrior || 0,
+  };
+  if (opp.persona === 'hellmuth' && mem(G, opp.id).tilt > 0) {
+    out.callAdj += b.tiltPounce || 0;
+    if (b.tiltTarget) { out.isoMul *= b.tiltTarget; out.valueAdj += 0.06; }
+  }
+  const mine = ledger(G, me.id, opp.id), theirs = ledger(G, opp.id, me.id), bb = curLevel(G).bb;
+  // They fold to MY bets a lot → fire at them more (and vice versa).
+  if (mine.faced >= 3) out.bluffMul *= clamp(((mine.fold + 1.26) / (mine.faced + 3)) / 0.42, 0.5, 1.8);
+  // I caught them bluffing / they showed me a bluff → call them lighter.
+  out.callAdj -= 0.03 * Math.min(mine.caught, 3) + 0.025 * Math.min(mine.shownBluff, 3);
+  // They caught ME bluffing → they call, so bluff them less.
+  out.bluffMul *= Math.pow(0.75, Math.min(theirs.caught, 3));
+  // Down big against them → more willing to tangle.
+  if (mine.net < -15 * bb) out.callAdj -= 0.02;
+  return out;
+}
+function avgRival(G, me, opps) {
+  const rs = opps.map(o => rival(G, me, o)), n = rs.length || 1;
+  const avg = k => rs.reduce((s, r) => s + r[k], 0) / n;
+  return { bluffMul: avg('bluffMul'), valueAdj: avg('valueAdj'), sizeMul: avg('sizeMul'), isoMul: Math.max(1, ...rs.map(r => r.isoMul)) };
+}
 
 function model(G, observer, opp) {
   const s = G.stats[opp.id], obsP = persona(observer);
@@ -137,6 +258,8 @@ function model(G, observer, opp) {
     bluff: (s.bluffShown + 0.30 * 4) / (s.aggShown + 4),
     af: (s.postAgg + 1.2 * k) / (s.postCall + k),
   };
+  const fl = file(observer, opp);
+  if (fl && fl.adj.bluffPrior) m.bluff = clamp(m.bluff + fl.adj.bluffPrior, 0.05, 0.85);
   // Negreanu's reads: he blends toward an opponent's true tendencies.
   if (obsP.read && opp.kind === 'bot') {
     const t = persona(opp), tilt = mem(G, opp.id).tilt > 0;
@@ -353,7 +476,8 @@ function preflop(G, p, per, me, la, opps, tilt, say) {
 
   if (G.raiseCount === 0) {
     const limpers = opps.filter(o => G.hand[o.id].vpip).length;
-    const open = clamp(per.open * (0.55 + 0.8 * late) * steal * tiltMul * wildMul * stuckMul, 0.03, 0.92);
+    const iso = avgRival(G, p, opps.filter(o => G.hand[o.id].vpip || o.seat === G.bb || o.seat === G.sb)).isoMul;
+    const open = clamp(per.open * (0.55 + 0.8 * late) * steal * tiltMul * wildMul * stuckMul * iso, 0.03, 0.92);
     if (pct < open) {
       const to = roundUnit(bb * (per.openBB + limpers) * (p.seat === G.sb && opps.length > 1 ? 1.15 : 1));
       return act('raise', to >= la.maxTo * 0.4 ? la.maxTo : to);
@@ -375,8 +499,11 @@ function preflop(G, p, per, me, la, opps, tilt, say) {
   const implied = (effBB > 35 && (pair || suited) && la.toCall < p.stack * 0.1) ? 0.04 + (per.callWide - 1) * 0.06 : 0;
   const eAdj = e * realize + implied;
   const callingAllIn = la.call >= p.stack || (aggr && aggr.allIn);
-  const need = potOdds + per.callAdj + (callingAllIn ? per.allinAdj : 0);
+  const rv = aggr ? rival(G, p, aggr) : rival(G, p, p);
+  const need = potOdds + per.callAdj + rv.callAdj + (callingAllIn ? per.allinAdj : 0);
 
+  // Rivalry trap: Hellmuth flats big pairs against Dwan, like the aces he slow-played on High Stakes Duel.
+  if (aggr && rv.trap && pct < 0.03 && G.raiseCount === 1 && effBB > 20 && !callingAllIn && rand() < rv.trap) return act('call');
   const valueThresh = per.threeBet * (G.raiseCount === 1 ? 1 : 0.45) * (tilt ? 2 : 1) * (me.wild ? 1.4 : 1);
   if (la.canRaise && (pct < valueThresh || e * (opps.length + 1) > per.raiseRel * 1.15)) {
     const mult = G.raiseCount === 1 ? (late >= 0.75 ? 3 : 3.5) : 2.3;
@@ -385,7 +512,7 @@ function preflop(G, p, per, me, la, opps, tilt, say) {
   }
   if (la.canRaise && G.raiseCount === 1 && pct > 0.06 && pct < 0.42 && effBB > 25 && aggr) {
     const foldAdj = clamp(model(G, p, aggr).fold / 0.42, 0.6, 1.6);
-    if (rand() < per.threeBetBluff * foldAdj * (me.wild ? 1.6 : 1)) {
+    if (rand() < per.threeBetBluff * foldAdj * rv.threeBetMul * (me.wild ? 1.6 : 1)) {
       const to = roundUnit(G.currentBet * (late >= 0.75 ? 3 : 3.5));
       return act('raise', to >= la.maxTo * 0.38 ? la.maxTo : to);
     }
@@ -409,20 +536,22 @@ function postflop(G, p, per, me, la, opps, tilt, say) {
   const wildMul = me.wild ? 1.8 : 1;
   const stuckMul = me.stuck > 0 ? 1.3 : 1;
   const tiltMul = tilt ? 1.8 : 1;
-  const bluffMul = wildMul * stuckMul * tiltMul;
+  const rvAll = avgRival(G, p, opps);
+  const bluffMul = wildMul * stuckMul * tiltMul * rvAll.bluffMul;
+  const valueRel = per.valueRel - rvAll.valueAdj;
   const prevStreet = { flop: 'preflop', turn: 'flop', river: 'turn' }[G.street];
   const wasAgg = G.hand[p.id].aggStreet === prevStreet || (G.street === 'flop' && G.pfAggressor === p.seat);
   const scary = isScary(G);
   const pickSize = (arr) => arr[Math.floor(rand() * arr.length)];
 
   if (la.toCall === 0) {
-    if (rel >= per.valueRel) {
+    if (rel >= valueRel) {
       if (rel > 1.8 && rand() < (p.persona === 'dwan' ? 0.05 : 0.18) && G.street !== 'river') return act('check');
-      let frac = pickSize(per.value);
+      let frac = pickSize(per.value) * rvAll.sizeMul;
       if (per.medium && rel < 1.5) frac = pickSize(per.medium);         // Negreanu's sizing tell
       return act('raise', sizeTo(la, frac));
     }
-    if (G.street === 'flop' && G.pfAggressor === p.seat && rand() < per.cbet * (n === 1 ? 1 : 0.5) * clamp(foldF, 0.6, 1.4) * (tilt ? 1.3 : 1)) {
+    if (G.street === 'flop' && G.pfAggressor === p.seat && rand() < per.cbet * (n === 1 ? 1 : 0.5) * clamp(foldF * rvAll.bluffMul, 0.5, 1.5) * (tilt ? 1.3 : 1)) {
       return act('raise', sizeTo(la, p.persona === 'dwan' ? pickSize([0.5, 0.75]) : pickSize([0.33, 0.5])));
     }
     if (wasAgg && G.street !== 'flop' && rand() < per.barrel * foldF * (scary ? 1.3 : 1) * bluffMul) {
@@ -439,11 +568,12 @@ function postflop(G, p, per, me, la, opps, tilt, say) {
 
   // Facing a bet.
   const aggr = G.players[G.lastAggressor];
+  const rv = aggr ? rival(G, p, aggr) : rival(G, p, p);
   if (per.read && aggr && aggr.cards && aggr.cards.length && n >= 1 && la.toCall >= la.pot * 0.2 && rand() < per.read) {
     const te = trueEquity(G, p, aggr);
-    const right = rand() < per.readAcc;
+    const right = rand() < per.readAcc + rv.readAccAdj;
     const believed = right ? te : 1 - te;
-    e = 0.35 * e + 0.65 * believed;
+    e = 0.45 * e + 0.55 * believed;
     if (rand() < 0.6) {
       const lines = believed > 0.5 ? LINES.negreanu.readBluff : LINES.negreanu.readStrong;
       say.push({ kind: 'talk', text: pick(lines).replace('{name}', aggr.name.split(' ')[0]) });
@@ -452,7 +582,8 @@ function postflop(G, p, per, me, la, opps, tilt, say) {
   const potOdds = la.toCall / (la.pot + la.toCall);
   const implied = strongDraw && G.street !== 'river' && p.stack > la.pot ? 0.04 : 0;
   const callingAllIn = la.call >= p.stack || (aggr && aggr.allIn);
-  const need = potOdds + per.callAdj + (callingAllIn ? per.allinAdj : 0);
+  const need = potOdds + per.callAdj + rv.callAdj + (callingAllIn ? per.allinAdj : 0) +
+    (G.street === 'river' ? rv.riverCallAdj : rv.floatAdj);
   const rel2 = e * (n + 1);
   if (la.canRaise && rel2 >= per.raiseRel && rand() < 0.75) {
     return act('raise', sizeTo(la, pickSize(per.value)));
@@ -514,7 +645,9 @@ function onHandEnd(G) {
       const badBeat = delta < 0 && G.allinEq && G.allinEq[p.seat] >= 60;
       const stung = delta < 0 && (-delta >= Math.max(0.08 * p.startStack, 4 * bb) || (p.shown && !p.folded));
       if (stung || badBeat) {
-        if (m.tilt === 0 && rand() < persona(p).tiltChance) {
+        const beaters = G.winners.map(w => G.players[w.seat]).filter(w => w && w !== p);
+        const tMul = Math.max(1, ...beaters.map(w => rival(G, p, w).tiltMul));
+        if (m.tilt === 0 && rand() < Math.min(0.9, persona(p).tiltChance * tMul)) {
           m.tilt = 3 + Math.floor(rand() * 5); m.mood = 'tilt';
           out.push({ who: p.id, kind: 'talk', text: pick(lines.tilt) });
           out.push({ who: p.id, kind: 'emote', text: pick(lines.antics) });
@@ -527,6 +660,9 @@ function onHandEnd(G) {
     if (p.persona === 'dwan') {
       if (delta < 0 && big) m.stuck = 3; else if (m.stuck > 0) m.stuck--;
     }
+    // Rivalry banter: aimed at whoever this pot went to / came from.
+    const rivalLine = rivalryLine(G, p, delta);
+    if (rivalLine && rand() < 0.6) { out.push({ who: p.id, kind: 'talk', text: rivalLine }); continue; }
     // Banter
     const shownBluff = p.shown && G.board.length >= 3 && G.hand[p.id].postAgg > 0 && W.isWeak(p.cards, G.board);
     if (shownBluff && lines.showBluff) out.push({ who: p.id, kind: 'talk', text: pick(lines.showBluff) });
@@ -536,6 +672,20 @@ function onHandEnd(G) {
     if (busted.length && !p.out && rand() < 0.5) out.push({ who: p.id, kind: 'talk', text: pick(lines.bust) });
   }
   return out;
+}
+
+function rivalryLine(G, p, delta) {
+  if (!delta) return null;
+  const others = G.players.filter(o => o !== p && o.kind === 'bot' && file(p, o));
+  let best = null, amt = 0;
+  for (const o of others) {
+    const od = o.stack - o.startStack;
+    if (delta > 0 && od < 0 && -od > amt) { best = o; amt = -od; }
+    if (delta < 0 && od > 0 && od > amt) { best = o; amt = od; }
+  }
+  if (!best || amt < 4 * curLevel(G).bb) return null;
+  const f = file(p, best);
+  return pick(delta > 0 ? f.taunt : f.gripe);
 }
 
 // Bot won uncontested: show or muck?
@@ -576,6 +726,15 @@ function notes(G, botId) {
   if (m.stuck > 0) out.push('Stuck after a big loss — playing even looser.');
   for (const o of G.players) {
     if (o.id === botId || o.out) continue;
+    const L = ledger(G, botId, o.id), T = ledger(G, o.id, botId), first = o.name.split(' ')[0];
+    if (L.faced >= 3 && L.fold / L.faced >= 0.6) out.push(`${first} has folded to his bets ${L.fold}/${L.faced} times — firing at ${first} more.`);
+    if (L.caught) out.push(`Caught ${first} bluffing ${L.caught > 1 ? L.caught + ' times' : 'once'} — calling ${first} lighter.`);
+    if (L.shownBluff) out.push(`${first} showed him a bluff — he wants revenge.`);
+    if (T.caught) out.push(`${first} has caught his bluffs — bluffing ${first} less.`);
+    if (o.persona === 'hellmuth' && mem(G, o.id).tilt > 0 && file(b, o)) out.push(`Hellmuth is tilting — ${b.persona === 'dwan' ? 'isolating him and value-betting big' : 'calling him down light'}.`);
+  }
+  for (const o of G.players) {
+    if (o.id === botId || o.out) continue;
     const s = G.stats[o.id], md = model(G, b, o), first = o.name.split(' ')[0];
     if (s.hands < 4) continue;
     if (md.fold > 0.55 && s.faced >= 3) out.push(`Sees ${first} folding to bets ${Math.round(md.fold * 100)}% — bluffing ${first} more.`);
@@ -584,10 +743,10 @@ function notes(G, botId) {
     else if (md.vpip < 0.18 && s.hands >= 6) out.push(`${first} is tight (${Math.round(md.vpip * 100)}% VPIP) — stealing ${first}'s blinds.`);
     if (s.aggShown >= 2 && md.bluff > 0.4) out.push(`Caught ${first} bluffing — calling down lighter.`);
   }
-  return out.slice(0, 6);
+  return out.slice(0, 7);
 }
 
-const API = { PERSONAS, LINES, decide, onHandStart, onHandEnd, showChoice, onChat, notes, playPct, equity, model, mem };
+const API = { PERSONAS, LINES, RIVALRY, RIVALRY_SOURCES, rival, ledger, decide, onHandStart, onHandEnd, showChoice, onChat, notes, playPct, equity, model, mem };
 if (typeof module !== 'undefined' && module.exports) module.exports = API;
 root.WSOP_BOTS = API;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

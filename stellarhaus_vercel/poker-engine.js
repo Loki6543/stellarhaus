@@ -242,7 +242,7 @@ function newGame(seats, opts) {
     toAct: -1, turnId: 0, currentBet: 0, minRaise: 0, fullRaiseSeq: 0, raiseCount: 0,
     lastAggressor: -1, pfAggressor: -1, tabled: false, runout: false,
     winners: [], results: [], equity: null, showmuck: null,
-    hand: {}, stats: {}, bot: {},
+    hand: {}, stats: {}, bot: {}, h2h: {},
     log: [], logId: 0,
   };
   for (const p of G.players) G.stats[p.id] = blankStats();
@@ -308,7 +308,7 @@ function startHand(G) {
   for (const p of G.players) {
     Object.assign(p, { cards: [], folded: p.out, allIn: false, bet: 0, total: 0, acted: false, actSeq: -1,
       last: '', shown: false, handName: '', startStack: p.stack });
-    G.hand[p.id] = { vpip: false, pfr: false, pfLevel: 0, postAgg: 0, postCall: 0, aggStreet: '' };
+    G.hand[p.id] = { vpip: false, pfr: false, pfLevel: 0, postAgg: 0, postCall: 0, aggStreet: '', foldedTo: null };
   }
   const live = G.players.filter(alive).length;
   if (!(G.handNo === 1 && G.button >= 0)) G.button = nextSeat(G, Math.max(G.button, -1), alive);
@@ -375,9 +375,13 @@ function applyAction(G, i, a) {
   let text = '';
 
   if (!pre && la.toCall > 0) st.faced++;
+  // Head-to-head ledger: how this player responds to a specific aggressor.
+  const ag = la.toCall > 0 && G.lastAggressor >= 0 && G.lastAggressor !== i ? P(G, G.lastAggressor) : null;
+  if (ag) pair(G, ag.id, p.id).faced++;
   if (type === 'fold') {
     p.folded = true; p.last = 'Fold'; text = `${p.name} folds`;
     if (!pre && la.toCall > 0) st.foldFaced++;
+    if (ag) { pair(G, ag.id, p.id).fold++; hf.foldedTo = ag.id; }
   } else if (type === 'check') {
     p.last = 'Check'; text = `${p.name} checks`;
     if (!pre) st.postCheck++;
@@ -552,6 +556,12 @@ function resolveShowdown(G) {
     if (won[p.seat]) { st.sdWon++; st.won++; }
     if (G.hand[p.id].postAgg > 0) { st.aggShown++; if (isWeak(p.cards, G.board)) st.bluffShown++; }
   }
+  // Head-to-head showdowns: who beat whom, and who got caught bluffing by whom.
+  for (const w of live) for (const l of live) {
+    if (w === l || !won[w.seat] || won[l.seat]) continue;
+    pair(G, w.id, l.id).sd++; pair(G, w.id, l.id).won++; pair(G, l.id, w.id).sd++;
+    if (G.hand[l.id].postAgg > 0 && isWeak(l.cards, G.board)) pair(G, w.id, l.id).caught++;
+  }
   for (const p of G.players) { if (G.hand[p.id].vpip) G.stats[p.id].vpip++; if (G.hand[p.id].pfr) G.stats[p.id].pfr++; }
   for (const p of G.players) { p.total = 0; p.bet = 0; }
   G.dead = 0; G.equity = null;
@@ -593,7 +603,12 @@ function showOrMuck(G, seat, show) {
     const d = describeHand(p.cards, G.board);
     log(G, 'show', `${p.name} shows ${p.cards.map(cardPretty).join(' ')}${d && G.board.length >= 3 ? ' — ' + d.main : ''}`, { who: p.id });
     if (G.hand[p.id].postAgg > 0 && G.board.length >= 3) {
-      G.stats[p.id].aggShown++; if (isWeak(p.cards, G.board)) G.stats[p.id].bluffShown++;
+      G.stats[p.id].aggShown++;
+      if (isWeak(p.cards, G.board)) {
+        G.stats[p.id].bluffShown++;
+        // Everyone who folded to this bluff remembers it.
+        for (const q of G.players) if (G.hand[q.id] && G.hand[q.id].foldedTo === p.id) pair(G, q.id, p.id).shownBluff++;
+      }
     }
   } else log(G, 'show', `${p.name} mucks`, { who: p.id });
   G.showmuck = null;
@@ -601,8 +616,30 @@ function showOrMuck(G, seat, show) {
   return true;
 }
 
+// Head-to-head record of `a` against `b`.
+function pair(G, a, b) {
+  if (!G.h2h) G.h2h = {};
+  const k = a + '>' + b;
+  return G.h2h[k] || (G.h2h[k] = { faced: 0, fold: 0, sd: 0, won: 0, caught: 0, shownBluff: 0, net: 0 });
+}
+// Chips that changed hands this hand, split from each loser to the winners.
+function ledgerNet(G) {
+  const d = G.players.map(p => p.stack - p.startStack);
+  const gain = d.reduce((s, x) => s + Math.max(0, x), 0);
+  if (!gain) return;
+  G.players.forEach((l, li) => {
+    if (d[li] >= 0) return;
+    G.players.forEach((w, wi) => {
+      if (d[wi] <= 0) return;
+      const amt = Math.round(-d[li] * d[wi] / gain);
+      pair(G, w.id, l.id).net += amt; pair(G, l.id, w.id).net -= amt;
+    });
+  });
+}
+
 // Eliminations, payouts, champion.
 function settle(G) {
+  ledgerNet(G);
   // Busted in the same hand: the bigger starting stack finishes higher; exact ties split the prizes.
   let place = G.players.filter(alive).length;
   const busted = G.players.filter(p => alive(p) && p.stack === 0).sort((a, b) => a.startStack - b.startStack);
@@ -689,7 +726,7 @@ const API = {
   rank, suit, cardStr, cardPretty, rand, shuffledDeck,
   evaluate, scoreCat, scoreKick, scoreName, bestFive, handPct, pfIndex, preflopName, preflopTier, draws, describeHand,
   dealStacks, newGame, drawForButton, startHand, legalActions, applyAction, dealStreet, resolveShowdown,
-  showOrMuck, buildPots, potTotal, computeEquity, publicView, log, nextSeat, curLevel,
+  showOrMuck, buildPots, potTotal, pair, computeEquity, publicView, log, nextSeat, curLevel,
   fmt, money, ordinal, roundUnit, isWeak, inHand, canAct, alive,
 };
 if (typeof module !== 'undefined' && module.exports) module.exports = API;

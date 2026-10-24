@@ -114,3 +114,26 @@ test('full AI final tables finish with correct payouts', () => {
   }
   console.log(`  ${games} games, avg ${Math.round(hands / games)} hands`);
 });
+
+test('head-to-head ledger stays consistent and rivalries shape decisions', () => {
+  const { G } = playGame();
+  for (const k in G.h2h) {
+    const [a, b] = k.split('>');
+    const back = G.h2h[b + '>' + a];
+    if (back) assert.ok(Math.abs(G.h2h[k].net + back.net) <= 1, 'net chips are zero-sum between a pair');
+    assert.ok(G.h2h[k].fold <= G.h2h[k].faced);
+    assert.ok(G.h2h[k].won <= G.h2h[k].sd);
+  }
+  const fresh = W.newGame(SEATS);
+  const [dwan, hell, neg] = ['dwan', 'hellmuth', 'negreanu'].map(id => fresh.players.find(p => p.id === id));
+  assert.ok(B.rival(fresh, hell, dwan).callAdj < 0, 'Hellmuth calls Dwan down light');
+  assert.ok(B.rival(fresh, hell, dwan).trap > 0, 'Hellmuth slow-plays big pairs vs Dwan');
+  assert.ok(B.rival(fresh, neg, hell).callAdj > 0, 'Negreanu respects calm Hellmuth');
+  assert.ok(B.rival(fresh, dwan, neg).bluffMul < 1, 'Dwan bluffs Negreanu less');
+  fresh.bot.hellmuth = { tilt: 3, mood: 'tilt' };
+  assert.ok(B.rival(fresh, neg, hell).callAdj < 0, 'Negreanu pounces on a tilted Hellmuth');
+  // Live ledger: a player who keeps folding to Dwan gets bluffed more
+  fresh.h2h['dwan>kevin'] = { faced: 10, fold: 9, sd: 0, won: 0, caught: 0, shownBluff: 0, net: 0 };
+  const kev = fresh.players.find(p => p.id === 'kevin');
+  assert.ok(B.rival(fresh, dwan, kev).bluffMul > 1.3);
+});

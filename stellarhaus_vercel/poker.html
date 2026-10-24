@@ -210,7 +210,7 @@ input, select { font: inherit; color: inherit; }
 .le.talk, .le.chat { display: flex; gap: 8px; align-items: flex-start; padding: 5px 0; }
 .le.talk .bub, .le.chat .bub { background: var(--panel3); border-radius: 4px 12px 12px 12px; padding: 6px 10px; color: var(--ink); }
 .le.chat .bub { background: rgba(61,220,151,.1); border: 1px solid rgba(61,220,151,.25); }
-.le .mini { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--c); color: #0a0a0a; font-family: var(--fd); font-size: .6rem; display: grid; place-items: center; font-weight: 600; margin-top: 2px; }
+.mini { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--c); color: #0a0a0a; font-family: var(--fd); font-size: .6rem; display: grid; place-items: center; font-weight: 600; margin-top: 2px; }
 .cs { font-family: var(--fd); font-weight: 600; white-space: nowrap; padding: 0 3px; border-radius: 3px; background: #f4f2ea; }
 .cs.s-s { color: var(--s-s); } .cs.s-h { color: var(--s-h); } .cs.s-d { color: var(--s-d); } .cs.s-c { color: var(--s-c); }
 .chatbar { display: flex; gap: 6px; padding: 10px 12px; padding-bottom: max(10px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); flex: none; }
@@ -327,6 +327,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); height: 28px; }
   .sizer { grid-template-columns: minmax(0, 1fr); gap: 4px; }
   .pod { padding: 5px 6px; gap: 5px; border-radius: 11px; }
   .avatar { width: 24px; height: 24px; font-size: .6rem; }
+  .avatar.ico-av { width: 28px; height: 28px; padding: 1px; }
   .pod .nm { font-size: .64rem; letter-spacing: .03em; }
   .pod .stk { font-size: .8rem; }
   .pod .stk small { display: none; }
@@ -338,6 +339,43 @@ input[type=range] { width: 100%; accent-color: var(--gold); height: 28px; }
   .mk { font-size: .55rem; height: 16px; min-width: 16px; }
   .seat.me .nm::after { content: ''; }
 }
+/* Character avatars: Dwan's cannon, Hellmuth's stove, Negreanu's chatterbox */
+.avatar.ico-av, .mini.ico-av { background: radial-gradient(circle at 38% 32%, #2b3342, #0b0e14 75%); padding: 2px; overflow: visible; }
+.mini.ico-av { box-shadow: 0 0 0 1.5px var(--c); }
+.avatar svg, .mini svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.cannon .barrel { transform-box: view-box; }
+.cannon .smoke circle { fill: #ececec; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.fire .cannon .barrel { animation: recoil .5s ease-out; }
+.fire .cannon .smoke circle { animation: puff .9s ease-out; }
+.fire .cannon .smoke circle:nth-child(2) { animation-delay: .06s; } .fire .cannon .smoke circle:nth-child(3) { animation-delay: .12s; }
+.smoking .cannon .smoke circle:first-child { animation: wisp 2.4s ease-in-out infinite; }
+@keyframes recoil { 15% { transform: translate(-3px, 2px); } 100% { transform: none; } }
+@keyframes puff { 0% { opacity: .95; transform: scale(.4); } 100% { opacity: 0; transform: translate(3px, -3px) scale(2.2); } }
+@keyframes wisp { 0%, 100% { opacity: 0; } 50% { opacity: .55; transform: translateY(-3px) scale(1.4); } }
+.stove .flames path { fill: #5cb8ff; transform-box: fill-box; transform-origin: 50% 100%; transform: scale(.7, .55); transition: fill .3s; }
+.hot .stove .flames path { fill: #ff8a1f; transform: scale(1.15, 1.5); animation: flick .16s infinite alternate; filter: drop-shadow(0 0 2px #ff3b1f); }
+.hot .stove .flames path.f2 { animation-delay: .08s; }
+.avatar.hot { box-shadow: 0 0 0 2px rgba(0,0,0,.5), 0 0 0 3px #ff3b30, 0 0 18px rgba(255,59,48,.7); }
+@keyframes flick { from { transform: scale(1.05, 1.35) skewX(-5deg); } to { transform: scale(1.22, 1.7) skewX(5deg); } }
+.chatter .jaw-up, .chatter .jaw-low { transform-box: view-box; }
+.talking .chatter .jaw-up { animation: chomp .12s infinite alternate; }
+.talking .chatter .jaw-low { animation: chomp2 .12s infinite alternate; }
+.talking .chatter { animation: hop .24s infinite alternate; }
+@keyframes chomp { to { transform: translateY(-3.5px); } }
+@keyframes chomp2 { to { transform: translateY(1.5px); } }
+@keyframes hop { to { transform: translateY(-1.5px) rotate(-4deg); } }
+.rivals { display: grid; gap: 8px; margin-top: 10px; }
+.rv { border-top: 1px solid var(--line); padding-top: 8px; }
+.rvh { display: flex; align-items: center; gap: 7px; font-size: .82rem; }
+.rvh .mini { width: 20px; height: 20px; }
+.rvh b { color: var(--gold2); font-weight: 500; }
+.rv ul.hist { list-style: none; margin: 5px 0; display: grid; gap: 3px; }
+.rv ul.hist li { font-size: .76rem; color: var(--dim); padding-left: 10px; border-left: 2px solid rgba(216,180,90,.35); }
+.rv ul.hist li::before { content: none; }
+.rv .plan { font-size: .78rem; color: var(--ink); }
+.rv .live { font-size: .74rem; color: #9fc3ff; margin-top: 3px; }
+.srcs { font-size: .72rem; color: var(--mute); display: grid; gap: 3px; margin-top: 6px; }
+.srcs a { color: var(--dim); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 </style>
 </head>
@@ -509,6 +547,45 @@ const COLORS = { kevin: '#3ddc97', firo: '#ff6b4a', dwan: '#3fa7ff', hellmuth: '
 const INITIALS = { kevin: 'K', firo: 'F', dwan: 'TD', hellmuth: 'PH', negreanu: 'DN' };
 const SHORT = { kevin: 'Kevin', firo: 'Firo', dwan: 'Dwan', hellmuth: 'Hellmuth', negreanu: 'Negreanu' };
 const OTHER = { kevin: 'firo', firo: 'kevin' };
+const teeth = (y, h) => [0, 1, 2, 3, 4, 5].map(k => `<rect x="${10.2 + k * 3.35}" y="${y}" width="2.9" height="${h}" rx="1" fill="#fffdf6"/>`).join('');
+const flame = x => `M${x} 15.5C${x - 3.6} 13.6 ${x - 3.2} 9.8 ${x - 1} 7c.3 2 1.9 2.9 2.5 4 .7-1.2.6-2.2.4-3 2.2 2.1 2.2 5.7-1.9 7.5z`;
+const ICONS = {
+  dwan: `<svg class="cannon" viewBox="3 3 36 36" aria-label="cannon">
+    <g class="smoke"><circle cx="33.5" cy="9.5" r="3.2"/><circle cx="37" cy="6" r="2.2"/><circle cx="36" cy="13" r="2"/></g>
+    <g class="barrel"><path d="M8.5 26.5 29 13.5l2.6 4.1-20 13.3z" fill="#c18c45" stroke="#4a2f0c" stroke-width=".8"/>
+    <circle cx="9.6" cy="28.7" r="4.2" fill="#c18c45" stroke="#4a2f0c" stroke-width=".8"/><circle cx="7.2" cy="30.6" r="1.4" fill="#6e4718"/>
+    <rect x="28.2" y="12.3" width="4.2" height="6.6" rx="1.2" transform="rotate(-33 30.3 15.6)" fill="#d9a85a" stroke="#4a2f0c" stroke-width=".8"/>
+    <path d="M11.6 25.4 28 15" stroke="#fff1c9" stroke-width="1.1" stroke-linecap="round" opacity=".8"/></g>
+    <circle cx="16" cy="29" r="6.6" fill="#5b3814" stroke="#2a1606" stroke-width="1.6"/>
+    <path d="M16 22.6v12.8M9.6 29h12.8M11.5 24.5l9 9M20.5 24.5l-9 9" stroke="#c48a45" stroke-width="1.2"/><circle cx="16" cy="29" r="2" fill="#f1c97a"/></svg>`,
+  hellmuth: `<svg class="stove" viewBox="0 0 40 40" aria-label="stove">
+    <g class="flames"><path class="f1" d="${flame(14)}"/><path class="f2" d="${flame(26)}"/></g>
+    <rect x="7" y="15" width="26" height="3" rx="1" fill="#2a2d33"/>
+    <rect x="8" y="17.5" width="24" height="16" rx="2" fill="#ece6d6"/><rect x="8" y="17.5" width="24" height="3.6" rx="1.5" fill="#cfc5ad"/>
+    <circle cx="12.5" cy="19.3" r="1.1" fill="#2a2d33"/><circle cx="17" cy="19.3" r="1.1" fill="#2a2d33"/><circle cx="23" cy="19.3" r="1.1" fill="#2a2d33"/><circle cx="27.5" cy="19.3" r="1.1" fill="#2a2d33"/>
+    <rect x="11" y="23" width="18" height="8" rx="1.5" fill="#2a2d33"/><rect x="12.5" y="24.3" width="15" height="1.8" rx=".9" fill="#5d6570"/>
+    <rect x="9.5" y="33.4" width="3" height="2.2" fill="#2a2d33"/><rect x="27.5" y="33.4" width="3" height="2.2" fill="#2a2d33"/></svg>`,
+  negreanu: `<svg class="chatter" viewBox="0 0 40 40" aria-label="chattering teeth">
+    <ellipse cx="14" cy="34.5" rx="4.2" ry="2" fill="#f2a541"/><ellipse cx="26" cy="34.5" rx="4.2" ry="2" fill="#f2a541"/>
+    <path d="M33.5 21h3M36.5 18v6" stroke="#d8b45a" stroke-width="2" stroke-linecap="round"/>
+    <g class="jaw-low"><path d="M7 22.5h26c0 5.6-5 9.5-13 9.5S7 28.1 7 22.5z" fill="#e2557a"/>${teeth(22.5, 3)}</g>
+    <g class="jaw-up"><path d="M7 19.5C7 12.5 12 8 20 8s13 4.5 13 11.5z" fill="#e2557a"/><path d="M10 11.5c3-2 7-2.6 10-2.6" stroke="#f59ab1" stroke-width="1.4" fill="none" stroke-linecap="round"/>${teeth(16.2, 3.4)}</g></svg>`,
+};
+function avatarHTML(id, cls, style) {
+  const ic = ICONS[id];
+  return `<div class="avatar${ic ? ' ico-av' : ''}${cls ? ' ' + cls : ''}" style="--c:${COLORS[id]};${style || ''}">${ic || INITIALS[id] || '?'}</div>`;
+}
+function miniHTML(id) {
+  const ic = ICONS[id];
+  return `<span class="mini${ic ? ' ico-av' : ''}" style="--c:${COLORS[id] || '#888'}">${ic || INITIALS[id] || '?'}</span>`;
+}
+// Short-lived avatar animations (cannon fire, chatter) keyed by player id.
+function fxPulse(id, cls, ms) {
+  S.fx[id + ':' + cls] = Date.now() + ms;
+  if (S.view && !$('game').classList.contains('hidden')) renderSeats(S.view);
+  setTimeout(() => { if (S.view) renderSeats(S.view); }, ms + 30);
+}
+const fxOn = (id, cls) => (S.fx[id + ':' + cls] || 0) > Date.now();
 const POS = {
   land: { seat: [[50, 86], [10, 56], [24, 13], [76, 13], [90, 56]], bet: [[50, 67], [25, 57], [34, 33], [66, 33], [75, 57]], d: [[61, 72], [19, 43], [35, 23], [65, 23], [81, 43]] },
   port: { seat: [[50, 89], [15, 66], [21, 15], [79, 15], [85, 66]], bet: [[50, 74], [27, 56], [30, 31], [70, 31], [73, 56]], d: [[64, 78], [22, 54], [37, 25], [63, 25], [78, 54]] },
@@ -575,7 +652,7 @@ const S = {
   sentLog: 0, guestSeen: 0, hostSeen: 0, welcome: null,
   clock: null, loopT: null, saveT: null, ann: [], annT: null,
   raiseTo: 0, raiseTurn: -1, foldConfirm: false, lastTurnSeen: -1, lastHandSeen: 0, lastBoardLen: 0,
-  tab: 'log', filter: 'all', unread: 0, sideOpen: false, showOdds: false, lastPhase: '',
+  tab: 'log', filter: 'all', unread: 0, sideOpen: false, showOdds: false, lastPhase: '', fx: {},
 };
 
 /* ═══════════ NETWORK ═══════════
@@ -808,7 +885,7 @@ function handDone() {
 function updateScout() {
   const G = S.G, notes = {};
   for (const p of G.players) if (p.kind === 'bot') notes[p.id] = B.notes(G, p.id);
-  G.scout = { notes, stats: JSON.parse(JSON.stringify(G.stats)) };
+  G.scout = { notes, stats: JSON.parse(JSON.stringify(G.stats)), h2h: JSON.parse(JSON.stringify(G.h2h || {})) };
 }
 
 function afterChange() {
@@ -1018,6 +1095,8 @@ function rebuildLocalLog() {
 }
 function liveEffects(e) {
   if (e.ann) showAnn(e.ann);
+  if (e.kind === 'action' && e.act === 'raise' && ICONS[e.who]) fxPulse(e.who, 'fire', 900);
+  if ((e.kind === 'talk' || e.kind === 'emote') && ICONS[e.who]) fxPulse(e.who, 'talking', 2600);
   if (e.kind === 'board') Sound.play('card');
   else if (e.kind === 'action') Sound.play(e.act === 'check' ? 'check' : e.act === 'fold' ? 'card' : 'chip');
   else if (e.kind === 'win') Sound.play('win');
@@ -1031,7 +1110,7 @@ function logRow(e) {
   const name = e.who && SHORT[e.who] ? SHORT[e.who] : '';
   const col = e.who && COLORS[e.who] ? COLORS[e.who] : '#888';
   if (e.kind === 'talk' || e.kind === 'chat') {
-    return `<div class="le ${e.kind}" data-k="chat"><span class="mini" style="--c:${col}">${INITIALS[e.who] || '?'}</span><div class="bub"><b style="color:${col}">${esc(name)}</b> ${richText(e.text)}</div></div>`;
+    return `<div class="le ${e.kind}" data-k="chat">${miniHTML(e.who)}<div class="bub"><b style="color:${col}">${esc(name)}</b> ${richText(e.text)}</div></div>`;
   }
   if (e.kind === 'emote') return `<div class="le emote" data-k="chat">✦ ${esc(e.text)}</div>`;
   if (e.kind === 'hand') return `<div class="le hand" data-k="hands">${richText(e.text)}</div>`;
@@ -1188,11 +1267,15 @@ function renderSeats(v) {
     const eq = v.equity && v.equity[i] != null && !p.folded ? `<span class="eq">${v.equity[i]}%</span>` : '';
     const auto = (v.autoSeat || []).includes(p.id) ? ' <small style="color:var(--mute)">AUTO</small>' : '';
     const hn = p.shown && p.handName ? `<div class="hn">${esc(p.handName)}</div>` : '';
-    el.innerHTML = `${mood}<div class="hole">${hole}</div>
-      <div class="pod"><div class="markers">${markers}</div><div class="avatar" style="--c:${COLORS[p.id]}">${INITIALS[p.id]}</div>
+    const avc = [p.id === 'dwan' && fxOn(p.id, 'fire') ? 'fire' : '', p.mood === 'wild' ? 'smoking' : '', p.mood === 'tilt' ? 'hot' : '',
+      fxOn(p.id, 'talking') || (acting && p.id === 'negreanu') ? 'talking' : ''].filter(Boolean).join(' ');
+    const html = `${mood}<div class="hole">${hole}</div>
+      <div class="pod"><div class="markers">${markers}</div>${avatarHTML(p.id, avc)}
       <div class="info"><div class="nm">${esc(S.port ? SHORT[p.id] : p.name)}${auto}</div><div class="stk">${p.out ? '—' : fmt(p.stack)}<small>${p.out ? '' : Math.round(p.stack / bb) + ' BB'}</small></div></div></div>
       <div class="timer"><i id="tm-${i}"></i></div>${eq}
       <div class="tag ${tagCls}">${esc(tag || '')}</div>${hn}`;
+    // Rebuild only on change so avatar animations aren't restarted by every state update.
+    if (el._h !== html) { el.innerHTML = html; el._h = html; }
     // Chips in front
     if (p.bet > 0) { be.className = 'bet'; be.innerHTML = `<span class="chipstk" style="--cc:${COLORS[p.id]}"></span>${fmt(p.bet)}`; be.style.display = ''; }
     else { be.innerHTML = ''; be.style.display = 'none'; }
@@ -1364,6 +1447,9 @@ setInterval(tickClock, 250);
 
 function renderStandings(v) {
   const bb = v.level.bb;
+  const key = v.gid + v.players.map(p => p.stack + ':' + p.out).join() + bb;
+  if (key === S.standKey && $('pane-stand').childElementCount) return;
+  S.standKey = key;
   const live = v.players.filter(p => !p.out).sort((a, b) => b.stack - a.stack);
   const out = v.players.filter(p => p.out).sort((a, b) => a.place - b.place);
   const rows = live.map((p, i) => `<tr><td class="rk">${i + 1}</td><td><span class="dot on" style="background:${COLORS[p.id]};box-shadow:none"></span>${esc(p.name)}</td><td class="n">${fmt(p.stack)}<br><span class="bbs">${Math.round(p.stack / bb)} BB</span></td></tr>`).join('') +
@@ -1387,12 +1473,15 @@ function statBlock(s) {
 }
 function renderScout(v) {
   const sc = v.scout || {}, stats = sc.stats || {}, notes = sc.notes || {};
+  const key = JSON.stringify(sc) + v.players.map(p => p.mood + p.out).join();
+  if (key === S.scoutKey && $('pane-scout').childElementCount) return;
+  S.scoutKey = key;
   const bots = v.players.filter(p => p.kind === 'bot');
   const humans = v.players.filter(p => p.kind === 'human');
   $('pane-scout').innerHTML = bots.map(p => {
     const P = B.PERSONAS[p.persona];
     const n = notes[p.id] || [];
-    return `<div class="scout"><div class="hd"><div class="avatar" style="--c:${COLORS[p.id]}">${INITIALS[p.id]}</div>
+    return `<div class="scout"><div class="hd">${avatarHTML(p.id)}
       <div><div class="nm">${esc(P.name)} <span style="color:var(--dim);font-size:.8rem">${esc(P.nick)}</span></div><div class="era">${esc(P.era)}</div><div class="sty">${esc(P.style)}</div></div></div>
       <p>${esc(P.bio)}</p>
       <ul>${P.strengths.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
@@ -1400,9 +1489,25 @@ function renderScout(v) {
       <div class="tell"><b>Tell:</b> ${esc(P.tell)}</div>
       <div class="stats">${statBlock(stats[p.id])}</div>
       ${n.length ? `<div class="adj">${n.map(x => `<div>${esc(x)}</div>`).join('')}</div>` : '<div class="adj" style="color:var(--mute)">Still sizing everyone up…</div>'}
+      <div class="rivals">${v.players.filter(o => o !== p).map(o => rivalHTML(p, o, sc.h2h || {})).join('')}</div>
     </div>`;
-  }).join('') + `<div class="sect">How the table sees you two</div>` + humans.map(p => `<div class="scout"><div class="hd"><div class="avatar" style="--c:${COLORS[p.id]}">${INITIALS[p.id]}</div><div class="nm">${esc(p.name)}</div></div><div class="stats">${statBlock(stats[p.id])}</div></div>`).join('') +
-    '<p class="fine">The bots track these numbers for every player and adjust: fold too often and Dwan bluffs you more; bluff too much and Negreanu starts calling you down.</p>';
+  }).join('') + `<div class="sect">How the table sees you two</div>` + humans.map(p => `<div class="scout"><div class="hd">${avatarHTML(p.id)}<div class="nm">${esc(p.name)}</div></div><div class="stats">${statBlock(stats[p.id])}</div></div>`).join('') +
+    '<p class="fine">The bots track these numbers for every player and adjust: fold too often and Dwan bluffs you more; bluff too much and Negreanu starts calling you down.</p>' +
+    `<div class="sect">Rivalry files are built from real hands</div><div class="srcs">${B.RIVALRY_SOURCES.map(x => `<a href="${x.url}" target="_blank" rel="noopener">${esc(x.label)}</a>`).join('')}</div>`;
+}
+function rivalHTML(p, o, h2h) {
+  const f = B.RIVALRY[p.persona] && B.RIVALRY[p.persona][o.persona];
+  const L = h2h[p.id + '>' + o.id], T = h2h[o.id + '>' + p.id], first = SHORT[o.id];
+  const bits = [];
+  if (L && L.net) bits.push(`${L.net > 0 ? '+' : '−'}${fmt(Math.abs(L.net))} from ${first}`);
+  if (L && L.sd) bits.push(`showdowns ${L.won}–${L.sd - L.won}`);
+  if (L && L.faced) bits.push(`${first} folds to his bets ${L.fold}/${L.faced}`);
+  if (L && L.caught) bits.push(`caught ${L.caught} bluff${L.caught > 1 ? 's' : ''}`);
+  if (T && T.caught) bits.push(`${first} caught him ${T.caught}×`);
+  const live = `<div class="live">At this table: ${bits.length ? esc(bits.join(' · ')) : 'no history yet'}</div>`;
+  if (!f) return `<div class="rv"><div class="rvh">${miniHTML(o.id)}<span>vs ${esc(first)}</span></div>${live}</div>`;
+  return `<div class="rv"><div class="rvh">${miniHTML(o.id)}<span>vs ${esc(first)} — <b>${esc(f.title)}</b></span></div>
+    <ul class="hist">${f.hands.map(h => `<li>${richText(h)}</li>`).join('')}</ul><div class="plan">${esc(f.plan)}</div>${live}</div>`;
 }
 function renderRules() {
   const rows = W.LEVELS.slice(0, 16).map(L => `<tr data-l="${L.n}"><td>Level ${L.n}</td><td>${fmt(L.sb)} / ${fmt(L.bb)}</td><td>${fmt(L.ante)}</td></tr>`).join('');
@@ -1500,7 +1605,7 @@ function initLobby() {
   $('lineup').innerHTML = SEATS.map(s => {
     const P = B.PERSONAS[s.persona];
     const sub = s.id === 'kevin' ? 'Short stack — time to make moves' : s.id === 'firo' ? 'Third in chips, right behind second' : `${P.nick} · ${P.style}`;
-    return `<div><span class="avatar" style="--c:${COLORS[s.id]};width:28px;height:28px;font-size:.62rem">${INITIALS[s.id]}</span><b>${esc(s.name)}</b><span>${esc(sub)}</span></div>`;
+    return `<div>${avatarHTML(s.id, '', 'width:30px;height:30px;font-size:.62rem')}<b>${esc(s.name)}</b><span>${esc(sub)}</span></div>`;
   }).join('');
   const pickMe = id => {
     S.me = id; store.set('wsop27.me', id);
