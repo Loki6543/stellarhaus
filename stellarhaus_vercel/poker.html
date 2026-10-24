@@ -1437,7 +1437,7 @@ function nextAnn() {
   if (!a) { S.annT = null; return; }
   if (a.type === 'intro') { showIntro(); return nextAnn(); }
   host.innerHTML = `<div class="ann ${a.type}"><div class="t">${esc(a.title)}</div><div class="s">${esc(a.sub || '')}</div></div>`;
-  const dur = a.type === 'champion' ? 6000 : a.type === 'bust' ? 4200 : 3000;
+  const dur = a.type === 'champion' ? 6000 : a.type === 'level' ? 6500 : a.type === 'bust' ? 4200 : 3000;
   S.annT = setTimeout(() => {
     const el = host.firstElementChild; if (el) el.classList.add('out');
     S.annT = setTimeout(() => { host.innerHTML = ''; nextAnn(); }, 400);

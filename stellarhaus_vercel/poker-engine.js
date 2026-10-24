@@ -216,11 +216,11 @@ function randBetween(a, b) { return a + rand() * (b - a); }
 // Chip ranks: two bots lead (1st & 2nd), Firo 3rd and close to 2nd, a bot 4th, Kevin last.
 function dealStacks(botIds) {
   const order = botIds.slice().sort(() => rand() - 0.5);
-  const s1 = roundUnit(randBetween(185e6, 235e6));
-  const s2 = roundUnit(randBetween(126e6, 150e6));
+  const s1 = roundUnit(randBetween(280e6, 350e6));
+  const s2 = roundUnit(randBetween(190e6, 225e6));
   const s3 = roundUnit(s2 * randBetween(0.91, 0.97));
-  const s4 = roundUnit(randBetween(72e6, 95e6));
-  const s5 = roundUnit(Math.min(randBetween(52e6, 62e6), s4 - 10e6));
+  const s4 = roundUnit(randBetween(110e6, 140e6));
+  const s5 = roundUnit(Math.min(randBetween(80e6, 95e6), s4 - 15e6));
   return { [order[0]]: s1, [order[1]]: s2, firo: s3, [order[2]]: s4, kevin: s5 };
 }
 
@@ -297,7 +297,7 @@ function startHand(G) {
     G.level++; G.handsAtLevel = 0;
     const L = curLevel(G);
     log(G, 'level', `Blinds up — Level ${L.n}: ${fmt(L.sb)} / ${fmt(L.bb)}, ${fmt(L.ante)} big-blind ante.`,
-      { ann: { type: 'level', title: `LEVEL ${L.n}`, sub: `BLINDS ${fmt(L.sb)} / ${fmt(L.bb)} · ${fmt(L.ante)} BB ANTE` } });
+      { ann: { type: 'level', title: `BLINDS ARE UP · LEVEL ${L.n}`, sub: `BLINDS ${fmt(L.sb)} / ${fmt(L.bb)} · ${fmt(L.ante)} BB ANTE` } });
   }
   G.handNo++; G.handsAtLevel++;
   const L = curLevel(G);
