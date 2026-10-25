@@ -18,8 +18,7 @@ function playGame(maxHands = 400) {
   const G = W.newGame(SEATS);
   const start = G.players.reduce((s, p) => s + p.stack, 0);
   const sorted = G.players.slice().sort((a, b) => b.stack - a.stack).map(p => p.id);
-  assert.strictEqual(sorted[2], 'firo', 'Firo is 3rd in chips');
-  assert.strictEqual(sorted[4], 'kevin', 'Kevin is last in chips');
+  assert.ok(G.players.every(p => p.stack === 120e6), 'everyone starts with 60 BB');
   W.drawForButton(G);
   let actions = 0;
   while (G.phase !== 'over' && G.handNo < maxHands) {
