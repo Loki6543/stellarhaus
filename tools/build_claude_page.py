@@ -45,6 +45,7 @@ def build(out):
     # The platform wraps the page in its own doctype/head/body.
     html = re.sub(r'<!DOCTYPE html>\n?|<html[^>]*>\n?|</?head>\n?|</?body>\n?|</html>\n?', '', html)
     html = re.sub(r'<meta [^>]*>\n?', '', html)
+    html = re.sub(r'<link rel="(manifest|icon|apple-touch-icon)"[^>]*>\n?', '', html)
     # Real people's photos stay on the self-hosted site only.
     html = re.sub(r'/\*PHOTOS\*/.*?/\*END\*/', '{}', html, flags=re.S)
     for old, new in BRANDING:
