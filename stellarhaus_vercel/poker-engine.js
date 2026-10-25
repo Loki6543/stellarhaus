@@ -214,7 +214,13 @@ function randBetween(a, b) { return a + rand() * (b - a); }
 
 // Seats (clockwise): Kevin, Firo, Dwan, Hellmuth, Negreanu.
 // Chip ranks: two bots lead (1st & 2nd), Firo 3rd and close to 2nd, a bot 4th, Kevin last.
+// Everyone starts even: 60 big blinds at level 1 (2M BB → 120M).
 function dealStacks(botIds) {
+  const even = LEVELS[0].bb * 60, out = { kevin: even, firo: even };
+  for (const id of botIds) out[id] = even;
+  return out;
+}
+function dealStacksTiered(botIds) {
   const order = botIds.slice().sort(() => rand() - 0.5);
   const s1 = roundUnit(randBetween(280e6, 350e6));
   const s2 = roundUnit(randBetween(190e6, 225e6));
