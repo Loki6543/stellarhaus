@@ -629,7 +629,7 @@ const RELAYS = [
 ];
 const SEATS = [
   { id: 'kevin', name: 'Loki', kind: 'human' },
-  { id: 'firo', name: 'Firo', kind: 'human', endsGame: true },
+  { id: 'firo', name: 'Firo', kind: 'human' },
   { id: 'dwan', name: 'Tom Dwan', kind: 'bot', persona: 'dwan' },
   { id: 'hellmuth', name: 'Phil Hellmuth', kind: 'bot', persona: 'hellmuth' },
   { id: 'negreanu', name: 'Daniel Negreanu', kind: 'bot', persona: 'negreanu' },
@@ -902,8 +902,8 @@ function announcerSee(fresh) {
   if (S.role !== 'host' || !S.G) return;
   const G = S.G, bb = W.curLevel(G).bb, nm = id => (G.players.find(p => p.id === id) || {}).name;
   const champ = fresh.find(e => e.kind === 'champion');
-  if (champ) { const firoOut = fresh.find(e => e.kind === 'bust' && e.who === 'firo');
-    return announce('champion', { a: nm(champ.who) + (firoOut ? ' — Firo\'s elimination ends the tournament, and' : '') }, champ); }
+  if (champ) {
+    return announce('champion', { a: nm(champ.who) }, champ); }
   for (const e of fresh) {
     let k = null, ctx = {};
     if (e.kind === 'allin') { const live = G.players.filter(p => p.shown && !p.folded); k = 'allin'; ctx = { a: live[0] && live[0].name, b: live.slice(1).map(p => p.name).join(' and ') }; }
@@ -1299,6 +1299,9 @@ function hostView(viewer) {
   v.hostSeat = S.me; v.guestSeat = OTHER[S.me]; v.guestOnline = guestOnline();
   v.settings = S.settings; v.scout = G.scout || null;
   v.autoSeat = G.players.filter(p => p.kind === 'human' && isAuto(p)).map(p => p.id);
+  // A busted partner sweats the other's hole cards from the rail.
+  const mine = viewer && G.players.find(p => p.id === viewer), pal = viewer && G.players.find(p => p.id === OTHER[viewer]);
+  if (mine && mine.out && pal && !pal.out && pal.cards.length) Object.assign(v.players[pal.seat], { cards: pal.cards.slice(), railView: true });
   return v;
 }
 
@@ -1315,9 +1318,11 @@ function publish() {
   render();
 }
 function sendHole(conn) {
-  const G = S.G, gi = hostSeatIdx(OTHER[S.me]), p = G.players[gi];
-  if (!p || !p.cards.length) return;
-  const msg = { t: 'hole', gid: G.gid, hand: G.handNo, seat: OTHER[S.me], cards: p.cards.slice() };
+  const G = S.G, gp = G.players[hostSeatIdx(OTHER[S.me])];
+  // Once the guest is out, they get the host's cards to sweat from the rail.
+  const p = gp && gp.out ? G.players[hostSeatIdx(S.me)] : gp;
+  if (!p || p.out || !p.cards.length) return;
+  const msg = { t: 'hole', gid: G.gid, hand: G.handNo, seat: p.id, cards: p.cards.slice() };
   if (conn) Net.sendConn(conn, msg);
   else if (S.lastHoleSent !== G.gid + G.handNo) { S.lastHoleSent = G.gid + G.handNo; Net.send(msg); }
 }
@@ -1419,7 +1424,7 @@ function guestReceive(m) {
       render();
       break;
     }
-    case 'hole': if (m.seat === S.me) { S.hole = { gid: m.gid, hand: m.hand, cards: m.cards }; render(); } break;
+    case 'hole': if (m.seat === S.me) S.hole = { gid: m.gid, hand: m.hand, cards: m.cards }; else S.rail = { gid: m.gid, hand: m.hand, cards: m.cards }; render(); break;
     case 'log': addLog(m.entries || [], true); break;
     case 'logsync': S.log = []; S.logIds.clear(); S.logCids.clear(); $('pane-log').innerHTML = ''; addLog(m.entries || [], false); renderLog(); break;
   }
@@ -1702,13 +1707,15 @@ function renderSeats(v) {
     const isMe = p.id === S.me;
     let cards = p.cards;
     if (isMe && S.role === 'guest') cards = holeFresh(v) ? S.hole.cards : null;
+    const rail = p.railView || (S.role === 'guest' && p.id === OTHER[S.me] && !p.out && S.rail && S.rail.gid === v.gid && S.rail.hand === v.handNo && (v.players.find(q => q.id === S.me) || {}).out);
+    if (rail && !cards) cards = S.rail.cards;
     const acting = v.phase === 'betting' && v.toAct === i;
     el.className = 'seat' + (isMe ? ' me' : '') + (p.folded && !p.out ? ' folded' : '') + (p.out ? ' out' : '') + (acting ? ' acting' : '') +
       (acting && (p.kind === 'bot' || (v.autoSeat || []).includes(p.id)) ? ' bot' : '') + (gains[i] && showWin ? ' winner' : '');
     // Cards above the pod
     let hole = '';
     if (p.hasCards || (cards && isMe && v.phase !== 'lobby' && !p.out)) {
-      if (cards && (isMe || p.shown)) {
+      if (cards && (isMe || p.shown || rail)) {
         const hlSet = winHand && winHand.seat === i && v.board.length === 5 ? new Set(W.bestFive(cards.concat(v.board))) : null;
         hole = cards.map(c => cardHTML(c, hlSet && hlSet.has(c) ? 'hl' : '')).join('');
       } else if (p.hasCards) hole = cardHTML(null) + cardHTML(null);
