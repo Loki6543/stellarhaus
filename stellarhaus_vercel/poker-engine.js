@@ -252,6 +252,8 @@ function newGame(seats, opts) {
     log: [], logId: 0,
   };
   for (const p of G.players) G.stats[p.id] = blankStats();
+  G.levelStacks = Object.fromEntries(G.players.map(p => [p.id, p.stack]));
+  G.bank = Object.fromEntries(G.players.filter(p => p.kind === 'human').map(p => [p.id, TIME_BANK_MS]));
   return G;
 }
 function blankStats() {
@@ -297,13 +299,19 @@ function drawForButton(G) {
   return deck.slice(0, G.players.length);
 }
 
+const TIME_BANK_MS = 90000;   // per human, per tournament; never refills
+
 /* ── Hand flow ─────────────────────────────────────────────── */
 function startHand(G) {
   if (G.handNo > 0 && G.handsAtLevel >= G.handsPerLevel && G.level < LEVELS.length - 1) {
     G.level++; G.handsAtLevel = 0;
-    const L = curLevel(G);
+    const L = curLevel(G), base = G.levelStacks || {};
+    // Standings plus each player's chip swing over the level that just ended.
+    const recap = G.players.map(p => ({ id: p.id, stack: p.stack, out: !!p.out, place: p.place || null,
+      delta: p.stack - (base[p.id] != null ? base[p.id] : p.stack) }));
+    G.levelStacks = Object.fromEntries(G.players.map(p => [p.id, p.stack]));
     log(G, 'level', `Blinds up — Level ${L.n}: ${fmt(L.sb)} / ${fmt(L.bb)}, ${fmt(L.ante)} big-blind ante.`,
-      { ann: { type: 'level', title: `BLINDS ARE UP · LEVEL ${L.n}`, sub: `BLINDS ${fmt(L.sb)} / ${fmt(L.bb)} · ${fmt(L.ante)} BB ANTE` } });
+      { ann: { type: 'level', title: `BLINDS ARE UP · LEVEL ${L.n}`, sub: `BLINDS ${fmt(L.sb)} / ${fmt(L.bb)} · ${fmt(L.ante)} BB ANTE`, level: L.n - 1, recap } });
   }
   G.handNo++; G.handsAtLevel++;
   const L = curLevel(G);
