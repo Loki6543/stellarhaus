@@ -487,6 +487,21 @@ body { background: radial-gradient(120% 70% at 50% -10%, #1b2233 0%, #0a0d14 45%
   linear-gradient(160deg, #b0162f, #5a0614); box-shadow: 0 4px 12px rgba(0,0,0,.5), inset 0 0 0 2px #f1e8d0, inset 0 0 0 4px #c9a24c; }
 @keyframes deal { from { transform: translate(0, -60px) rotate(-12deg) scale(.7); opacity: 0; } 70% { transform: translateY(3px) rotate(1deg); opacity: 1; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .crest h1, .seat.acting .pod, .seat.winner .pod { animation: none; } }
+
+/* Time bank + level recap */
+.bankbtn { justify-self: start; font-family: var(--fd); letter-spacing: .08em; font-size: .85rem; color: var(--gold2); background: rgba(245,215,127,.08); border: 1px solid rgba(245,215,127,.35); border-radius: 999px; padding: 7px 14px; min-height: 36px; }
+.bankbtn b { color: var(--ink); font-weight: 500; margin-left: 4px; }
+.bankbtn.on { background: rgba(245,215,127,.22); border-color: var(--gold2); animation: actGlow 1.2s ease-in-out infinite; }
+.bankbtn:disabled:not(.on) { opacity: .4; }
+.recap { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 60; width: min(420px, calc(100vw - 32px)); padding: 18px 16px 14px;
+  background: linear-gradient(180deg, rgba(26,32,46,.96), rgba(8,10,16,.97)); border: 1px solid rgba(245,215,127,.45); border-radius: 18px; box-shadow: 0 30px 80px rgba(0,0,0,.7); animation: pop .35s ease; }
+.recap h3 { font-family: var(--fd); letter-spacing: .16em; color: var(--gold2); text-align: center; font-size: 1.15rem; }
+.recap .rsub { text-align: center; color: var(--dim); font-family: var(--fd); letter-spacing: .12em; font-size: .72rem; margin: 2px 0 12px; }
+.rrow { display: grid; grid-template-columns: 22px 30px 1fr auto auto; align-items: center; gap: 8px; padding: 8px 6px; border-top: 1px solid var(--line); font-family: var(--fd); }
+.rrow .rk { color: var(--mute); text-align: center; } .rrow .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rrow .st { color: var(--gold2); } .rrow.me { background: rgba(245,215,127,.07); border-radius: 8px; } .rrow.out { opacity: .45; }
+.rrow b { min-width: 64px; text-align: right; font-weight: 500; } .rrow .up { color: #3ddc97; } .rrow .down { color: #ff5a5a; } .rrow .even { color: var(--dim); }
+.recap .btn { margin-top: 12px; }
 </style>
 </head>
 <body>
@@ -546,8 +561,8 @@ body { background: radial-gradient(120% 70% at 50% -10%, #1b2233 0%, #0a0d14 45%
     <div id="host-opts">
       <div class="opts">
         <label style="grid-column:1/-1" id="ai-ann-row" hidden>Announcer<button type="button" class="btn" id="ai-ann" style="text-transform:none;letter-spacing:.02em">Turn on live Claude commentary</button></label>
-        <label style="grid-column:1/-1">Announcer voice<select id="opt-voice"><option value="0">Text only</option><option value="1">Read calls out loud</option></select></label>
-        <label>Shot clock<select id="opt-clock"><option value="30">30 seconds</option><option value="45" selected>45 seconds</option><option value="60">60 seconds</option><option value="90">90 seconds</option></select></label>
+        <label style="grid-column:1/-1">Announcer voice<select id="opt-voice"><option value="1">On</option><option value="0">Off</option></select></label>
+        <label>Shot clock<select id="opt-clock"><option value="25" selected>25 seconds</option><option value="30">30 seconds</option><option value="45">45 seconds</option><option value="60">60 seconds</option><option value="90">90 seconds</option></select></label>
         <label>Pace<select id="opt-pace"><option value="1" selected>Broadcast</option><option value="0.55">Fast</option></select></label>
         <label style="grid-column:1/-1">If your partner’s connection drops<select id="opt-absent"><option value="pause" selected>Pause the game until they’re back</option><option value="clock">Their shot clock checks / folds</option><option value="autopilot">Autopilot plays their seat (practice)</option></select></label>
       </div>
@@ -790,7 +805,7 @@ const Sound = {
 /* ── App state ────────────────────────────────────────────── */
 const S = {
   role: null, me: store.get('wsop27.me', null), code: null,
-  G: null, settings: { clock: 45, pace: 1, absent: 'pause' },
+  G: null, settings: { clock: 25, pace: 1, absent: 'pause' },
   view: null, hole: null, log: [], logIds: new Set(), logCids: new Set(),
   sentLog: 0, guestSeen: 0, hostSeen: 0, welcome: null,
   clock: null, loopT: null, saveT: null, ann: [], annT: null,
@@ -916,7 +931,7 @@ function claudeTransport(code, role, onMsg, onStatus) {
   let warned = false;
   return {
     send: m => {
-      if (['act', 'show', 'chat', 'pause'].indexOf(m.t) < 0) return;
+      if (['act', 'show', 'chat', 'pause', 'bank'].indexOf(m.t) < 0) return;
       const x = Object.assign({}, m, { mid: uid() + uid() }); delete x.from; delete x.code;
       outbox.push(x); while (outbox.length > 8) outbox.shift();
       if (room) room.presence({ out: outbox.slice() }).catch(() => {});
@@ -943,7 +958,7 @@ const CALLS = {
   leader: ['New chip leader! {a} takes over the top spot.'],
 };
 const pickLine = (k, ctx) => { const l = CALLS[k][Math.floor(Math.random() * CALLS[k].length)]; return l.replace(/\{(\w+)\}/g, (m, x) => ctx[x] != null ? ctx[x] : ''); };
-const Ann = { live: false, busy: false, last: 0, leader: null, voice: store.get('wsop27.voice', false) };
+const Ann = { live: false, busy: false, last: 0, leader: null, voice: store.get('wsop27.voice2', true) };
 function announcerSee(fresh) {
   if (S.role !== 'host' || !S.G) return;
   const G = S.G, bb = W.curLevel(G).bb, nm = id => (G.players.find(p => p.id === id) || {}).name;
@@ -981,9 +996,20 @@ function announce(k, ctx, e) {
     .catch(() => { if (!Ann.busy) return; clearTimeout(t); Ann.busy = false; say(pickLine(k, ctx)); });
 }
 function speak(text) {
-  if (!Ann.voice || !Sound.on || !window.speechSynthesis) return;
-  try { const u = new SpeechSynthesisUtterance(text); u.rate = 1.05; u.pitch = 0.9; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) { /* no voice */ }
+  if (!Ann.voice || !window.speechSynthesis) return;
+  try {
+    const u = new SpeechSynthesisUtterance(text); u.rate = 1.05; u.pitch = 0.95; u.lang = 'en-US';
+    const vs = speechSynthesis.getVoices().filter(x => /^en[-_]US/i.test(x.lang));
+    const pick = vs.find(x => /Daniel|Aaron|Alex|Fred|Google US English|Guy|Male/i.test(x.name)) || vs[0];
+    if (pick) u.voice = pick;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  } catch (e) { /* no voice */ }
 }
+// iOS and Android only allow speech after a tap: unlock it on the first one.
+document.addEventListener('pointerdown', function unlock() {
+  document.removeEventListener('pointerdown', unlock);
+  try { if (window.speechSynthesis) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } } catch (e) { /* no voice */ }
+});
 // Private tip for the viewer only: junk hands outside the blinds are a fold.
 // Our own four-tier starting-hand scale (1 = strongest), from how often a hand beats a random one.
 const TIERS = [{ max: 0.08, name: 'Monster', val: 'raise and re-raise for value' }, { max: 0.25, name: 'Strong', val: 'open-raise from anywhere' },
@@ -1255,8 +1281,38 @@ function emitSays(list) {
   }
 }
 
+// Pros take 1–15s depending on the spot: snap folds are quick, big decisions get the tank.
+function botThink(G, seat, d) {
+  const la = W.legalActions(G, seat), p = G.players[seat], bb = W.curLevel(G).bb;
+  const r = (a, b) => a + Math.random() * (b - a), facing = la ? la.toCall / bb : 0;
+  const shove = (d.type === 'raise' && d.to >= p.bet + p.stack) || (d.type === 'call' && la && la.call >= p.stack);
+  let ms = d.type === 'fold' && G.street === 'preflop' && facing <= 3 ? r(1200, 3500) : d.type === 'check' ? r(1500, 4500) : r(3000, 7500);
+  if (shove || facing >= 12) ms = r(7000, 15000);
+  else if (G.street === 'river' && d.type !== 'check') ms += r(1000, 4000);
+  ms *= ({ dwan: 0.8, hellmuth: 1.15 })[p.id] || 1;
+  return Math.min(15000, pace(ms));
+}
+// Spend the time bank the actor drew on, once their turn is over.
+function settleBank(G) {
+  const c = S.clock; if (!c || c.bankStart == null) return;
+  if (c.turnId === G.turnId && G.phase === 'betting' && !G.paused) return;
+  const used = Math.min(c.bankAmt, Math.max(0, Date.now() - c.bankStart));
+  G.bank[c.bankId] = Math.max(0, (G.bank[c.bankId] || 0) - used);
+  c.bankStart = null;
+}
+function useBank(id) {
+  const G = S.G, c = S.clock; if (!G || !G.bank || G.paused || G.phase !== 'betting') return;
+  const p = G.players[G.toAct];
+  if (!p || p.id !== id || !c || c.turnId !== G.turnId || c.bankStart != null || !(G.bank[id] > 0)) return;
+  c.bankStart = Date.now(); c.bankAmt = G.bank[id]; c.bankId = id;
+  c.end += c.bankAmt; c.total = c.end - Date.now();
+  W.log(G, 'system', `${p.name} is using the time bank.`);
+  afterChange();
+}
+
 function hostTick() {
   const G = S.G;
+  if (G) settleBank(G);
   clearTimeout(S.loopT); S.loopT = null; S.botPending = false;
   if (!G || G.paused || G.phase === 'lobby' || G.phase === 'over') return;
   if (G.phase === 'intro') { S.loopT = setTimeout(nextHand, Math.max(0, (G.introUntil || 0) - Date.now())); return; }
@@ -1272,7 +1328,7 @@ function hostTick() {
         emitSays(d.say);
         W.applyAction(G, seat, d);
         afterChange();
-      }, pace(d.think));
+      }, botThink(G, seat, d));
       S.clock = null;
     } else {
       if (!S.clock || S.clock.turnId !== turn) {
@@ -1341,7 +1397,9 @@ function hostView(viewer) {
   const G = S.G, v = W.publicView(G, viewer);
   v.paused = !!G.paused; v.pauseReason = G.pauseReason || '';
   v.clock = S.clock && (S.clock.turnId === G.turnId || S.clock.turnId === 'sm' + G.handNo)
-    ? { seat: S.clock.seat, ms: G.paused && S.clock.left != null ? S.clock.left : Math.max(0, S.clock.end - Date.now()), total: S.clock.total } : null;
+    ? { seat: S.clock.seat, ms: G.paused && S.clock.left != null ? S.clock.left : Math.max(0, S.clock.end - Date.now()), total: S.clock.total,
+        bankMs: S.clock.bankStart != null ? Math.max(0, S.clock.bankAmt - (Date.now() - S.clock.bankStart)) : null } : null;
+  v.bank = G.bank || {};
   v.hostSeat = S.me; v.guestSeat = OTHER[S.me]; v.guestOnline = guestOnline();
   v.settings = S.settings; v.scout = G.scout || null;
   v.autoSeat = G.players.filter(p => p.kind === 'human' && isAuto(p)).map(p => p.id);
@@ -1406,6 +1464,7 @@ function hostReceive(m, conn) {
       if (m.cid && !S.logCids.has(m.cid)) hostChat(gid, String(m.text || '').slice(0, 200), m.cid, !!m.dm);
       break;
     case 'pause': setPaused(!!m.paused, G.players[gi].name); break;
+    case 'bank': if (m.turnId === G.turnId) useBank(gid); break;
   }
 }
 
@@ -1424,8 +1483,11 @@ function setPaused(on, by, msg, reason) {
   const G = S.G; if (!G || G.phase === 'lobby' || G.phase === 'over' || !!G.paused === on) return;
   G.paused = on; G.pauseReason = on ? (reason || `Paused by ${by}`) : '';
   if (!on) G.autoPaused = false;
-  if (on) { if (S.clock) S.clock.left = Math.max(0, S.clock.end - Date.now()); clearTimeout(S.loopT); }
-  else if (S.clock && S.clock.left != null) { S.clock.end = Date.now() + S.clock.left; S.clock.left = null; }
+  if (on) { if (S.clock) { S.clock.left = Math.max(0, S.clock.end - Date.now()); S.clock.pausedAt = Date.now(); } clearTimeout(S.loopT); }
+  else if (S.clock && S.clock.left != null) {
+    S.clock.end = Date.now() + S.clock.left; S.clock.left = null;
+    if (S.clock.bankStart != null && S.clock.pausedAt) S.clock.bankStart += Date.now() - S.clock.pausedAt;
+  }
   W.log(G, 'system', msg || `${by} ${on ? 'paused' : 'resumed'} the game.`);
   afterChange();
 }
@@ -1461,7 +1523,7 @@ function guestReceive(m) {
       const v = m.s; v._seq = v.seq; v._at = Date.now();
       // New game: drop the previous game's log on this screen too.
       if (S.view && S.view.gid !== v.gid) { S.log = []; S.logIds.clear(); S.logCids.clear(); $('pane-log').innerHTML = ''; S.hole = null; }
-      if (v.clock) v.clock.end = Date.now() + v.clock.ms;
+      if (v.clock) { v.clock.end = Date.now() + v.clock.ms; if (v.clock.bankMs != null) v.clock.bankEnd = Date.now() + v.clock.bankMs; }
       S.view = v;
       if (v.phase !== 'lobby' && $('game').classList.contains('hidden')) enterGame();
       if (v.phase === 'lobby') showWaitGuest();
@@ -1496,6 +1558,23 @@ function doAction(a) {
       if (!S.view.paused) Net.send({ t: 'act', turnId: turn, a });
     }, 2500);
   }
+}
+function bankLeft(v) {
+  const c = v.clock, full = (v.bank || {})[S.me];
+  if (full == null) return null;
+  if (!c || c.bankMs == null || c.seat !== myIdx()) return full;
+  if (S.role === 'host') return S.clock && S.clock.bankStart != null ? Math.max(0, S.clock.bankAmt - (Date.now() - S.clock.bankStart)) : full;
+  return Math.max(0, (c.bankEnd || 0) - Date.now());
+}
+function bankBtn(v) {
+  const left = bankLeft(v); if (left == null) return '';
+  const on = v.clock && v.clock.bankMs != null;
+  return `<button class="bankbtn${on ? ' on' : ''}" id="a-bank" ${on || left <= 0 ? 'disabled' : ''}>⏱ Time bank <b id="bank-s">${Math.ceil(left / 1000)}s</b></button>`;
+}
+function doBank() {
+  const v = S.view; if (!v || v.toAct !== myIdx() || v.phase !== 'betting' || v.paused) return;
+  if (S.role === 'host') useBank(S.me);
+  else { Net.send({ t: 'bank', turnId: v.turnId }); $('a-bank').disabled = true; }
 }
 function doShow(show) {
   const v = S.view; if (!v || v.phase !== 'showmuck' || !v.showmuck || v.showmuck.seat !== myIdx()) return;
@@ -1540,7 +1619,7 @@ function rebuildLocalLog() {
 }
 function liveEffects(e) {
   if (e.ann) showAnn(e.ann);
-  if (e.kind === 'announcer') { showAnn({ type: 'call', title: '🎙 ' + e.text }); speak(e.text); }
+  if (e.kind === 'announcer') speak(e.text);                 // commentary is voice only
   if (e.kind === 'action' && e.act === 'raise' && ICONS[e.who]) fxPulse(e.who, 'fire', 900);
   if ((e.kind === 'talk' || e.kind === 'emote') && ICONS[e.who]) fxPulse(e.who, 'talking', 2600);
   if (e.kind === 'board') Sound.play('card');
@@ -1561,7 +1640,7 @@ function logRow(e) {
   if (e.kind === 'talk' || e.kind === 'chat') {
     return `<div class="le ${e.kind}" data-k="chat">${miniHTML(e.who)}<div class="bub"><b style="color:${col}">${esc(name)}</b> ${richText(e.text)}</div></div>`;
   }
-  if (e.kind === 'announcer') return `<div class="le announcer" data-k="chat">🎙 <b>Announcer</b> ${richText(e.text)}</div>`;
+  if (e.kind === 'announcer') return '';
   if (e.kind === 'emote') return `<div class="le emote" data-k="chat">✦ ${esc(e.text)}</div>`;
   if (e.kind === 'hand') return `<div class="le hand" data-k="hands">${richText(e.text)}</div>`;
   if (e.kind === 'board') {
@@ -1627,12 +1706,26 @@ function showIntro() {
     <button class="btn gold wide" id="intro-go">Shuffle up and deal</button></div></div>`;
   const close = () => { const o = $('intro'); if (o) o.remove(); };
   $('intro-go').onclick = close; setTimeout(close, 15000);
+  speak('Ladies and gentlemen, your 2027 Main Event final table! Tom Dwan. Phil Hellmuth. Daniel Negreanu. And two unknown poker players, including one female! Shuffle up and deal!');
+}
+// End-of-level standings: chips and each player's swing over the level.
+function showRecap(a) {
+  const rows = a.recap.slice().sort((x, y) => (x.out - y.out) || (y.stack - x.stack) || ((x.place || 9) - (y.place || 9)));
+  const sign = d => d > 0 ? `<b class="up">+${fmt(d)}</b>` : d < 0 ? `<b class="down">−${fmt(-d)}</b>` : '<b class="even">±0</b>';
+  const host = $('overlay-host'); const old = $('recap'); if (old) old.remove();
+  host.insertAdjacentHTML('beforeend', `<div class="recap" id="recap"><h3>LEVEL ${a.level} COMPLETE</h3><div class="rsub">NEXT · ${esc(a.sub || '')}</div>
+    ${rows.map((p, i) => `<div class="rrow${p.out ? ' out' : ''}${p.id === S.me ? ' me' : ''}"><span class="rk">${p.out ? W.ordinal(p.place) : i + 1}</span>${miniHTML(p.id)}
+      <span class="nm">${FLAGS[p.id] || ''} ${esc(SHORT[p.id])}</span><span class="st">${p.out ? 'Out' : fmt(p.stack)}</span>${p.out && !p.delta ? '<b class="even"></b>' : sign(p.delta)}</div>`).join('')}
+    <button class="btn wide" id="recap-x">Back to the table</button></div>`);
+  const close = () => { const el = $('recap'); if (el) el.remove(); };
+  $('recap-x').onclick = close; setTimeout(close, 12000);
 }
 function nextAnn() {
   const host = $('ann-host');
   const a = S.ann.shift();
   if (!a) { S.annT = null; return; }
   if (a.type === 'intro') { showIntro(); return nextAnn(); }
+  if (a.type === 'level' && a.recap) showRecap(a);
   host.innerHTML = `<div class="ann ${a.type}"><div class="t">${esc(a.title)}</div><div class="s">${esc(a.sub || '')}</div></div>`;
   const dur = a.type === 'call' ? 4500 : a.type === 'champion' ? 6000 : a.type === 'level' ? 6500 : a.type === 'bust' ? 4200 : 3000;
   S.annT = setTimeout(() => {
@@ -1698,9 +1791,7 @@ function flashTitle() {
 function renderTop(v) {
   const live = v.players.filter(p => !p.out).sort((a, b) => b.stack - a.stack);
   const out = v.players.filter(p => p.out).sort((a, b) => a.place - b.place);
-  $('topstrip').innerHTML = `<span class="ts-pay">${S.phone ? '1st · $10M · winner take all' : '1st place · ' + W.money(v.payouts[0]) + ' · winner take all'}</span>` +
-    live.map((p, i) => `<span class="ts-p"><span class="rk">${i + 1}</span>${miniHTML(p.id)}${FLAGS[p.id] || ''} ${esc(SHORT[p.id])} <b>${fmt(p.stack)}</b></span>`).join('') +
-    out.map(p => `<span class="ts-p out"><span class="rk">${W.ordinal(p.place)}</span>${miniHTML(p.id)}${esc(SHORT[p.id])}</span>`).join('');
+  $('topstrip').innerHTML = `<span class="ts-pay">${S.phone ? '1st · $10M · winner take all' : '1st place · ' + W.money(v.payouts[0]) + ' · winner take all'}</span>`;
 }
 // Heads-up all-in "showdown cam": both hands, live odds every street.
 function camOn(G) { return G.tabled && G.players.filter(p => !p.folded && !p.out).length === 2 && (S.camHand = G.handNo); }
@@ -1839,7 +1930,8 @@ function renderDock(v) {
   const mh = $('myhand'), acts = $('acts');
   // Only rebuild when something relevant changed, so heartbeats never interrupt a slider drag.
   const key = [v.gid, v.handNo, v.phase, v.toAct, v.turnId, S.sentTurn === v.turnId, S.foldConfirm, (cards || []).join(), v.board.length,
-    me && me.folded, me && me.out, S.showOdds, S.sentShow, v.paused, v.showmuck && v.showmuck.seat, v.legal && v.legal.canRaise].join('|');
+    me && me.folded, me && me.out, S.showOdds, S.sentShow, v.paused, v.showmuck && v.showmuck.seat, v.legal && v.legal.canRaise,
+    (v.bank || {})[S.me], v.clock && v.clock.bankMs != null].join('|');
   if (key === S.dockKey) { tickClock(); return; }
   S.dockKey = key;
   // My hand panel
@@ -1885,7 +1977,8 @@ function renderDock(v) {
     </div>
     ${la.canRaise ? `<div class="sizer"><div class="presets" id="presets">${presets(v, la).map(p => `<button data-to="${p.to}">${p.l}</button>`).join('')}</div>
       <input type="range" id="a-slider" min="${la.minTo}" max="${la.maxTo}" step="${W.UNIT}" value="${S.raiseTo}"></div>` : ''}
-    <div class="clockline"><i id="dock-clock"></i></div>`;
+    <div class="clockline"><i id="dock-clock"></i></div>${bankBtn(v)}`;
+  if ($('a-bank')) $('a-bank').onclick = doBank;
   $('a-fold').onclick = () => {
     if (la.canCheck && !S.foldConfirm) { S.foldConfirm = true; renderDock(); return; }
     doAction({ type: 'fold' });
@@ -1949,6 +2042,7 @@ function tickClock() {
   const col = pct < 25 ? '#ff5a5a' : pct < 50 ? '#f0b429' : 'var(--green)';
   const ti = $('tm-' + v.clock.seat); if (ti) { ti.style.width = pct + '%'; ti.style.background = col; }
   const dc = $('dock-clock'); if (dc && v.clock.seat === myIdx()) { dc.style.width = pct + '%'; dc.style.background = col; }
+  const bs = $('bank-s'); if (bs && v.clock.bankMs != null) bs.textContent = Math.ceil(bankLeft(v) / 1000) + 's';
 }
 setInterval(tickClock, 250);
 
@@ -2163,7 +2257,7 @@ function initLobby() {
     hostStartGame();
   };
   $('opt-voice').value = Ann.voice ? '1' : '0';
-  $('opt-voice').onchange = () => { Ann.voice = $('opt-voice').value === '1'; store.set('wsop27.voice', Ann.voice); Sound.init(); if (Ann.voice) speak('Welcome to the final table.'); };
+  $('opt-voice').onchange = () => { Ann.voice = $('opt-voice').value === '1'; store.set('wsop27.voice2', Ann.voice); if (Ann.voice) speak('Welcome to the final table.'); };
   $('ai-ann').onclick = async () => {
     // First call asks for consent, from this click.
     $('ai-ann').disabled = true; $('ai-ann').textContent = 'Checking…';
