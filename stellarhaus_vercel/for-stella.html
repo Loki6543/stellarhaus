@@ -141,11 +141,10 @@ p,h1,h2,h3{margin:0}
 .orn::before,.orn::after{content:"";height:1px;width:min(150px,26%);background:linear-gradient(90deg,transparent,var(--gilt))}
 .orn::after{transform:scaleX(-1)}
 .orn span{font-size:.9rem;line-height:1}
-.passage{position:relative;padding:14px 16px;margin-inline:-16px;border-radius:10px;transition:background .4s}
+.passage{position:relative;padding:14px 16px;margin-inline:-16px;border-radius:10px;transition:none}
 .passage .topic{display:block;font:500 .64rem/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;color:var(--gilt);margin-bottom:10px}
 .passage blockquote{margin:0;font:400 clamp(1.18rem,2.3vw,1.42rem)/1.62 var(--f-letter);color:var(--ink);text-wrap:pretty}
 .passage blockquote::before{content:"\201C";float:left;font:italic 500 4.2em/.72 var(--f-letter);color:var(--gilt);margin:.06em .12em 0 -.04em}
-.passage.reading{background:rgba(201,130,47,.12)}
 .sign{display:flex;justify-content:flex-end;margin-top:clamp(18px,3vw,30px)}
 .sign p{font:400 clamp(2.6rem,7vw,3.8rem)/.9 var(--f-sign);color:var(--ink);transform:rotate(-6deg);text-align:left;padding-right:clamp(0px,3vw,30px)}
 .sign p span{display:block;padding-left:1.3em}
@@ -213,10 +212,6 @@ p,h1,h2,h3{margin:0}
   <div class="wrap nav-in">
     <a class="nav-logo" href="#home">Kev<i>&#10022;</i>Stella</a>
     <div class="nav-right">
-      <button class="btn" id="read-btn" type="button" hidden>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <span class="lbl" id="read-lbl">Read it aloud</span>
-      </button>
       <button class="btn" id="theme-btn" type="button">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>
         <span class="lbl" id="theme-lbl">Dawn</span>
@@ -446,28 +441,6 @@ p,h1,h2,h3{margin:0}
     const img = $('#portrait-img'); img.src = URL.createObjectURL(f); img.hidden = false; $('#monogram').hidden = true;
   });
 
-  /* read aloud, highlighting each passage as it is spoken */
-  const synth = window.speechSynthesis, readBtn = $('#read-btn');
-  if (synth && window.SpeechSynthesisUtterance) {
-    readBtn.hidden = false;
-    let reading = false;
-    const passages = $$('.passage');
-    const stop = () => { reading = false; synth.cancel(); passages.forEach(p => p.classList.remove('reading')); $('#read-lbl').textContent = 'Read it aloud'; readBtn.setAttribute('aria-pressed', 'false'); };
-    readBtn.setAttribute('aria-pressed', 'false');
-    readBtn.addEventListener('click', () => {
-      if (reading) return stop();
-      reading = true; $('#read-lbl').textContent = 'Stop'; readBtn.setAttribute('aria-pressed', 'true');
-      const voices = synth.getVoices(), voice = voices.find(v => /en[-_]/i.test(v.lang) && /natural|premium|enhanced/i.test(v.name)) || voices.find(v => /^en/i.test(v.lang));
-      const lines = passages.map(p => [p, $('blockquote', p).textContent]).concat([[null, 'I love you. Kevin.']]);
-      lines.forEach(([p, text], i) => {
-        const u = new SpeechSynthesisUtterance(text);
-        if (voice) u.voice = voice; u.rate = .92; u.pitch = 1;
-        u.onstart = () => { passages.forEach(x => x.classList.toggle('reading', x === p)); if (p) p.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' }); };
-        if (i === lines.length - 1) u.onend = stop;
-        synth.speak(u);
-      });
-    });
-  }
 })();
 </script>
 
