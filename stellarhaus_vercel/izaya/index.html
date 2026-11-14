@@ -72,8 +72,10 @@ canvas { display: block; width: 100%; aspect-ratio: 160 / 144; image-rendering: 
   </div>
 </div>
 <script src="core.js"></script>
+<script src="city.js"></script>
 <script src="story.js"></script>
 <script>
+boot();
 document.getElementById('fs').addEventListener('click', () => {
   const el = document.documentElement;
   if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().then(() => { try { screen.orientation.lock('portrait'); } catch (e) {} }).catch(() => {});

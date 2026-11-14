@@ -116,56 +116,43 @@ const MAPS = {
     npcs: [],
   },
   ikebukuro: {
-    rows: [
-      '^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
-      '^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
-      'qqqq##nnnn##########nnnn######',
-      'qqDq##BBDB####BBBB##BBDB##BDB#',
-      ',,,,,,,,,,,,,,,,,,,,,,,,,,,,,,',
-      ',V,,,L,,,,,,L,,,,V,,,L,,,,,,V,',
-      '......zz......................',
-      '=.=.=.zz=.=.=.=.=.=.=.=.=.=.=.',
-      '......zz......................',
-      ',,,,,L,,,,,L,,,,,,,,,L,,,,,,,,',
-      ',,,,,,,,,,,,,,,,,,,,,,,,,,,,,,',
-      'TgTgTgTgT,,^^^^^^^^,,,^^^^^^^^',
-      'gggggggggg,^^^^^^^^,,,^^^^^^^^',
-      'gTghggghgT,nnnnnnnn,,,########',
-      'gggggggggg,BBBDBBBB,V,####D###',
-      'TggTgggTgg,,,,,,,,,,,,,,,,,,,,',
-      'gggggggggg,,,,,,,,,,,,,,,,,,,,',
-      'TgTgTgTgTg,F,,,,,,,,,,,,F,,,,,',
-      'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    ],
+    rows: buildIkebukuro(),
     music: () => (G.chapter === 4 ? 'finale' : 'city'),
     night: () => G.chapter === 4,
-    labels: [{ px: 4, py: 36, t: 'STATION' }, { px: 202, py: 214, t: 'RUSSIA SUSHI' }, { px: 98, py: 36, t: 'LOFT' }, { px: 322, py: 36, t: 'SUNSHINE 60' }],
-    warps: { '2,3': stationDoor, '14,14': ['sushi', 4, 6, 'up'], '26,14': rooftopDoor },
-    objects: { '11,17': parkour, '24,17': parkour, '8,3': () => N('LOFT. Closed for inventory. Pity.'), '22,3': () => N("A karaoke bar. Someone inside is murdering a love song."), '27,3': () => N('A manga shop. Erika has probably bought everything in it.') },
+    labels: IKE_LABELS,
+    spots: [{ x: 47, y: 31, when: () => !G.flags.hqFound }],
+    warps: { '37,16': ['sushi', 4, 6, 'up'], '42,26': rooftopDoor, '47,31': hqDoor },
+    objects: Object.assign(
+      Object.fromEntries(Object.entries(IKE_DOORS).map(([k, t]) => [k, () => N(t)])),
+      { '24,18': stationDoor, '25,18': stationDoor, '26,18': stationDoor, '27,18': stationDoor,
+        '47,31': hqSecret, '52,32': parkour, '52,33': parkour, '3,11': parkour, '12,11': parkour }),
     npcs: [
-      { id: 'mikado', ch: 'mikado', x: 8, y: 10, dir: 'right', when: () => G.chapter === 1, talk: meetMikado,
+      { id: 'mikado', ch: 'mikado', x: 34, y: 21, dir: 'left', when: () => G.chapter === 1, talk: meetMikado,
         secret: { lv: 1, text: 'His phone shows a black login page. His thumb hovers over it like it belongs there.', flag: 'taroHint' } },
-      { id: 'masaomi', ch: 'masaomi', x: 9, y: 10, dir: 'left', when: () => G.chapter === 1, talk: meetMikado,
+      { id: 'masaomi', ch: 'masaomi', x: 35, y: 21, dir: 'left', when: () => G.chapter === 1, talk: meetMikado,
         secret: { lv: 2, text: 'Kida jokes too loudly. His eyes keep flicking to you. Guilt, old and heavy. Something about a girl named Saki.', flag: 'masaomiRead' } },
-      { id: 'shizuo', ch: 'shizuo', x: 16, y: 10, dir: 'right', sight: 4, patrol: 'RRRRRRR..LLLLLLL..', when: () => G.chapter === 1 && !G.flags.shizuoGone, talk: n => shizuoSpot(n), onSpot: n => shizuoSpot(n),
+      { id: 'shizuo', ch: 'shizuo', x: 41, y: 17, dir: 'right', sight: 4, patrol: 'RRRRRRRR..LLLLLLLL..', when: () => G.chapter === 1 && !G.flags.shizuoGone && !G.flags.shizuoLured, talk: n => shizuoSpot(n), onSpot: n => shizuoSpot(n),
         secret: { lv: 1, text: 'Pure rage, barely held in by a bartender vest. He is looking for someone. Specifically you.' } },
-      { id: 'simon', ch: 'simon', x: 15, y: 15, dir: 'down', when: () => G.chapter === 1, talk: talkSimon },
-      { id: 'celty', ch: 'celty', x: 20, y: 16, dir: 'left', when: () => G.chapter === 1, talk: talkCelty,
+      { id: 'simon', ch: 'simon', x: 38, y: 17, dir: 'down', when: () => G.chapter === 1, talk: talkSimon },
+      { id: 'shinra', ch: 'shinra', x: 5, y: 38, dir: 'down', when: () => G.chapter === 1, talk: talkShinra },
+      { id: 'celty', ch: 'celty', x: 7, y: 38, dir: 'left', when: () => G.chapter === 1, talk: talkCelty,
         secret: { lv: 3, text: 'Under the helmet: nothing. Black shadow curls where a neck should end. She is searching for something she lost.' } },
-      { id: 'kadota', ch: 'kadota', x: 27, y: 16, dir: 'down', when: () => G.chapter === 1, talk: talkKadota,
+      { id: 'kadota', ch: 'kadota', x: 40, y: 8, dir: 'down', when: () => G.chapter === 1, talk: talkKadota,
         secret: { lv: 1, text: "No colors on Kadota's crew. But Erika's phone has a black login page bookmarked." } },
-      { id: 'erika', ch: 'erika', x: 28, y: 16, dir: 'left', when: () => G.chapter === 1, talk: talkKadota },
-      { id: 'anri', ch: 'anri', x: 5, y: 15, dir: 'up', when: () => G.chapter === 1, talk: talkAnri,
+      { id: 'erika', ch: 'erika', x: 41, y: 8, dir: 'left', when: () => G.chapter === 1, talk: talkKadota },
+      { id: 'anri', ch: 'anri', x: 5, y: 26, dir: 'up', when: () => G.chapter === 1, talk: talkAnri,
         secret: { lv: 2, text: "Behind her glasses: calm. Far too calm for a girl being bullied. Like she's listening to a voice only she can hear.", seed: 'anri' } },
-      { id: 'bully1', ch: 'bully', x: 5, y: 14, dir: 'down', when: () => G.chapter === 1 && !G.flags.anriDone, talk: talkAnri },
-      { id: 'bully2', ch: 'bully', x: 4, y: 15, dir: 'right', when: () => G.chapter === 1 && !G.flags.anriDone, talk: talkAnri },
-      { id: 'bully3', ch: 'bully', x: 6, y: 15, dir: 'left', when: () => G.chapter === 1 && !G.flags.anriDone, talk: talkAnri },
-      { id: 'salary', ch: 'salary', x: 19, y: 4, dir: 'down', patrol: 'LLL..RRR..', when: () => G.chapter === 1, talk: crowd(0, 'SALARYMAN', "Not now. I'm late. I'm always late.") },
-      { id: 'girl', ch: 'girl', x: 24, y: 5, dir: 'left', when: () => G.chapter === 1, talk: crowd(1, 'STUDENT', "Hm? Oh, sorry, I'm in the middle of a chat.") },
-      { id: 'punk', ch: 'punk', x: 13, y: 16, dir: 'down', when: () => G.chapter === 1, talk: crowd(2, 'PUNK', "Whatchu lookin' at?!") },
-      { id: 'oldman', ch: 'oldman', x: 8, y: 13, dir: 'left', fixedFace: true, when: () => G.chapter === 1, talk: crowd(3, 'OLD MAN', 'Lovely evening. She would have liked it.') },
-      { id: 'dgirl', ch: 'girl', x: 13, y: 5, dir: 'down', when: () => G.chapter === 1, talk: () => say('STUDENT', "Huh? N-nothing! I'm not on any website!"),
+      { id: 'bully1', ch: 'bully', x: 5, y: 25, dir: 'down', when: () => G.chapter === 1 && !G.flags.anriDone, talk: talkAnri },
+      { id: 'bully2', ch: 'bully', x: 4, y: 26, dir: 'right', when: () => G.chapter === 1 && !G.flags.anriDone, talk: talkAnri },
+      { id: 'bully3', ch: 'bully', x: 6, y: 26, dir: 'left', when: () => G.chapter === 1 && !G.flags.anriDone, talk: talkAnri },
+      { id: 'salary', ch: 'salary', x: 3, y: 12, dir: 'down', patrol: 'RRRRR..LLLLL..', when: () => G.chapter === 1, talk: crowd(0, 'SALARYMAN', "Not now. I'm late. I'm always late.") },
+      { id: 'girl', ch: 'girl', x: 10, y: 9, dir: 'left', when: () => G.chapter === 1, talk: crowd(1, 'STUDENT', "Hm? Oh, sorry, I'm in the middle of a chat.") },
+      { id: 'punk', ch: 'punk', x: 36, y: 27, dir: 'down', when: () => G.chapter === 1, talk: crowd(2, 'PUNK', "Whatchu lookin' at?! This is MY alley!") },
+      { id: 'oldman', ch: 'oldman', x: 13, y: 20, dir: 'right', fixedFace: true, when: () => G.chapter === 1, talk: crowd(3, 'OLD MAN', 'Lovely evening. She would have liked it.') },
+      { id: 'dgirl', ch: 'girl', x: 45, y: 21, dir: 'down', when: () => G.chapter === 1, talk: () => say('STUDENT', "Huh? N-nothing! I'm not on any website!"),
         secret: { lv: 1, text: 'Her screen: a black page, one password field. DOLLARS. She is smiling like she belongs to something.' } },
+      { id: 'tourist', ch: 'salary', x: 26, y: 20, dir: 'up', when: () => G.chapter === 1, talk: () => say('TOURIST', 'Excuse me, which exit is Sunshine City? ...East? Everything is east. Thank you!') },
+      { id: 'otaku', ch: 'dollar2', x: 35, y: 8, dir: 'down', when: () => G.chapter === 1, talk: () => say('OTAKU', 'The limited figure sold out in four minutes. FOUR. I have lost faith in humanity.') },
     ],
   },
   sushi: {
@@ -180,7 +167,7 @@ const MAPS = {
       'xxxxmxxxxx',
     ],
     music: 'city',
-    warps: { '4,7': ['ikebukuro', 14, 15, 'down'] },
+    warps: { '4,7': ['ikebukuro', 37, 17, 'down'] },
     objects: Object.fromEntries([0, 1, 2, 3, 4, 5, 6].map(x => [x + ',2', () => say('DENNIS', G.flags.ateSushi ? 'Simon told me you tipped. Suspicious. Thank you.' : "We're out of fatty tuna. We're always out of fatty tuna. Simon gives it away.")])),
     npcs: [
       { id: 'dennis', ch: 'dennis', x: 3, y: 1, dir: 'down', talk: () => say('DENNIS', "Simon's outside again? He scares off more customers than he brings in. Don't tell him I said that.") },
@@ -188,6 +175,7 @@ const MAPS = {
         secret: { lv: 2, text: "A YAGIRI PHARMACEUTICALS lanyard under his jacket. Into his phone: 'The girl with the scar on her neck. By Sunday.'", seed: 'yagiri' } },
     ],
   },
+  hq: HQ_MAP,
   rooftop: {
     rows: [
       'EEEEEEEEEE',
@@ -336,16 +324,17 @@ async function officeExit() {
 async function startCh1() {
   G.chapter = 1; G.time = 3;
   await card('CHAPTER 1', 'Spring in Ikebukuro');
-  loadMap('ikebukuro', 2, 4, 'down');
+  loadMap('ikebukuro', 25, 19, 'right');
   await fadeTo(0);
-  await N('Ikebukuro. Spring. New students, new gangs, new rumors.');
-  await I("A boy named Ryugamine Mikado arrived today. Kida-kun's childhood friend. Let's say hello.");
-  await N('You have ◷3 actions today. Shizuo is patrolling the main street. SELECT shows who is watching.');
+  await N('Ikebukuro Station. Spring. New students, new gangs, new rumors.');
+  await I("A boy named Ryugamine Mikado arrived today. Kida-kun's childhood friend. He'll come out the east exit. Let's say hello.");
+  sfx('ping');
+  await N('A text from yourself, scheduled weeks ago: "Safehouse ready. Back alley behind the closed mahjong parlor, south of Sunshine 60 St. The lock only shows in OBSERVER MODE."');
+  await N('You have ◷3 actions today. Shizuo patrols Sunshine 60 Street. SELECT shows who is watching.');
   saveGame();
 }
 async function stationDoor() {
-  await N("No train home yet. There's still someone waiting for you in Ikebukuro.");
-  await movePlayer('D');
+  await N("Ticket gates. No train home yet. There's still someone waiting for you in Ikebukuro.");
 }
 async function rooftopDoor() {
   if (!G.flags.metMikado) { await N('A stairwell to the roof. Locked. Your "date" from the suicide site isn\'t here yet.'); await movePlayer('D'); return; }
@@ -394,8 +383,8 @@ async function meetMikado() {
   }
   await wait(20);
   sfx('ping');
-  await N('Your phone buzzes. A message from the suicide site: "I\'m on the roof of the building past Russia Sushi. Come alone."');
-  await I('Ah. My date. The rooftop door east of the sushi shop. I have until then to play.');
+  await N('Your phone buzzes. A message from the suicide site: "I\'m on the roof. The ROOF ACCESS door, south side of Sunshine 60 Street. Come alone."');
+  await I('Ah. My date. Going up ends the day, so I have until then to play.');
 }
 function crowd(idx, name, line) {
   return async function () {
@@ -450,6 +439,22 @@ async function talkSimon() {
       await say('SIMON', 'Like you. But sadder.');
       await plant('slasher'); await gainXP('intel', 1);
     } else { await say('SIMON', 'Come back! Sushi waits for you!'); return; }
+  }
+}
+async function talkShinra() {
+  await say('SHINRA', "Izaya! Here to annoy Celty? She's right there, you know. She can hear you.");
+  if (G.flags.shinraTalk) { await say('SHINRA', 'Did I mention Celty is perfect? I did? Worth repeating.'); return; }
+  const r = await ask('Shinra adjusts his glasses.', [{ t: 'Ask for gossip', v: 'g' }, { t: 'Ask about Celty', v: 'c' }, { t: 'Leave', v: 'x' }]);
+  if (r === 'g') {
+    G.flags.shinraTalk = true;
+    await say('SHINRA', 'Gossip? Hmm. A pharmaceutical company keeps asking underground doctors about "a girl with a scar around her neck." Strange, right?');
+    await I('(Yagiri Pharmaceuticals. How very interesting.)');
+    await gainXP('intel', 1);
+  } else if (r === 'c') {
+    G.flags.shinraTalk = true;
+    await I('How is your beautiful, headless roommate?');
+    await say('SHINRA', 'PERFECT. Thank you for asking! You should stay for tea! No, wait, she hates you.');
+    rel('shinra', 10);
   }
 }
 async function talkCelty() {
@@ -657,14 +662,21 @@ async function nightChat() {
 }
 
 /* ---------------- FINAL CHAPTER: THE DOLLARS ---------------- */
-const CROWD = [[9, 5], [10, 6], [13, 7], [14, 8], [16, 6], [17, 7], [18, 4], [19, 8], [10, 9], [13, 10], [15, 9], [17, 10], [20, 6], [21, 8], [23, 5], [22, 10], [8, 8], [7, 10], [24, 7], [11, 5]];
+let CROWD = [];
+function buildCrowd() {
+  const keep = new Set(['39,18', '40,18', '40,19', '41,19', '44,21', '47,21', '48,21', '49,21', '51,17', '50,18', '50,17']);
+  const out = [];
+  for (let y = 17; y <= 21; y++) for (let x = 33; x <= 51; x++) if ((x * 7 + y * 3) % 5 === 0 && !keep.has(x + ',' + y) && !tileSolid(x, y)) out.push([x, y]);
+  return out;
+}
 async function finale() {
   G.chapter = 4; G.time = 0;
   await card('FINAL CHAPTER', 'The Dollars');
-  loadMap('ikebukuro', 12, 4, 'down');
+  loadMap('ikebukuro', 39, 18, 'down');
+  CROWD = buildCrowd();
   CROWD.forEach(([x, y], k) => addNpc({ id: 'crowd' + k, ch: k % 3 ? 'dollar' : (k % 2 ? 'dollar2' : 'girl'), x, y, dir: k % 2 ? 'up' : 'left' }));
-  addNpc({ id: 'mikado', ch: 'mikado', x: 15, y: 5, dir: 'down' });
-  ['s1', 's2', 's3'].forEach((id, k) => addNpc({ id, ch: 'suit', x: 25 + k, y: 9, dir: 'left' }));
+  addNpc({ id: 'mikado', ch: 'mikado', x: 41, y: 19, dir: 'down' });
+  ['s1', 's2', 's3'].forEach((id, k) => addNpc({ id, ch: 'suit', x: 47 + k, y: 21, dir: 'left' }));
   await fadeTo(0);
   await N('Sunday night. Sunshine Street.');
   await N('Hundreds of strangers. No colors. No banners. Just phones, glowing.');
@@ -682,18 +694,18 @@ async function finale() {
   await Promise.all(['s1', 's2', 's3'].map(id => moveNpc(id, 'RRRRR', true)));
   ['s1', 's2', 's3'].forEach(removeNpc);
   if (G.seeds.rio) await bloom('rio', 'A text from Rio: "Black van on the north road. They had a girl with a scar." Your new eyes work beautifully.');
-  addNpc({ id: 'celty', ch: 'celty', x: 15, y: 11, dir: 'up' });
+  addNpc({ id: 'celty', ch: 'celty', x: 44, y: 21, dir: 'up' });
   await N('An engine with no sound. A horse that whinnies.');
-  await moveNpc('celty', 'UUUUUUUUUUU', true);
+  await moveNpc('celty', 'UUUUUUUUU', true);
   removeNpc('celty');
   await N('The Black Rider drives straight up the building wall. Hundreds of phones rise to film her.');
   if (G.seeds.courier) await bloom('courier', 'Halfway up the wall, her helmet turns toward you. A debt, paid in spectacle.');
   if (G.rel.shizuo <= -60) {
-    addNpc({ id: 'shizuo', ch: 'shizuo', x: 27, y: 4, dir: 'left' });
+    addNpc({ id: 'shizuo', ch: 'shizuo', x: 51, y: 17, dir: 'left' });
     emote('shizuo', '!'); sfx('alarm'); await wait(30);
     await say('SHIZUO', 'IIIZAAAAYAAAA!!');
     if (G.seeds.van) {
-      addNpc({ id: 'kadota', ch: 'kadota', x: 26, y: 5, dir: 'up' });
+      addNpc({ id: 'kadota', ch: 'kadota', x: 50, y: 18, dir: 'up' });
       await say('KADOTA', "Not tonight, Shizuo. Let the kids have their party.");
       await bloom('van', 'Kadota steps in. Free dinner: the best investment you ever made.');
       await moveNpc('shizuo', 'RR', true); removeNpc('shizuo'); removeNpc('kadota');
@@ -708,7 +720,7 @@ async function finale() {
   await N('The crowd melts into the city. Just like that, the Dollars are real.');
   CROWD.forEach((_, k) => removeNpc('crowd' + k));
   await wait(20);
-  await movePlayer('RRD');
+  await movePlayer('RD');
   G.p.dir = 'right'; face('mikado', 'left');
   await I('Well, well. Tanaka Taro-kun.');
   if (G.seeds.taro) await bloom('taro', 'You knew from the start. He can see it in your smile.');
@@ -789,4 +801,3 @@ function drawResults() {
   if ((G.frame >> 5) % 2) textC('PRESS A', 132, 3);
 }
 
-boot();

@@ -65,6 +65,7 @@ const FONT_SRC = {
   '★': '..#../..#../#####/.###./.#.#./#...#/.....', '◷': '.###./#.#.#/#.#.#/#.##./#...#/.###./.....',
   '…': '...../...../...../...../...../#.#.#/.....', '—': '...../...../...../#####/...../...../.....',
   '♪': '..##./..#.#/..#../..#../.##../###../.#...', '·': '...../...../...../..#../...../...../.....',
+  '¥': '#...#/.#.#./..#../#####/..#../#####/..#..', '→': '...../..#../...#./#####/...#./..#../.....',
 };
 const FONT = {};
 for (const k in FONT_SRC) FONT[k] = FONT_SRC[k].split('/');
@@ -208,6 +209,7 @@ const CHARS = {
   suit:    { H: 3, S: 0, E: 3, C: 3, T: 0, I: 0, P: 3, F: 3, fx: ['shades'] },
   dollar:  { H: 2, S: 0, E: 3, C: 1, T: 2, I: 2, P: 2, F: 3 },
   dollar2: { H: 3, S: 0, E: 3, C: 2, T: 1, I: 1, P: 3, F: 3 },
+  shinra:  { H: 2, S: 0, E: 3, C: 0, T: 0, I: 1, P: 2, F: 3, fx: ['glasses'] },
 };
 function buildChar(def) {
   const out = {};
@@ -280,12 +282,23 @@ const TILE_FN = {
   't': g => { wood(g); g.r(2, 3, 12, 9, 3); g.r(3, 4, 10, 7, 0); g.r(5, 6, 3, 2, 1); g.r(3, 12, 2, 3, 3); g.r(11, 12, 2, 3, 3); },
   'E': g => { conc(g); g.r(0, 4, 16, 2, 3); g.r(0, 10, 16, 2, 3); g.r(1, 2, 2, 13, 3); g.r(9, 2, 2, 13, 3); },
   'x': g => g.f(3),
+  'f': g => { g.f(0); g.r(0, 0, 16, 1, 1); g.r(0, 0, 1, 16, 1); g.r(8, 8, 8, 1, 1); g.r(8, 8, 1, 8, 1); },
+  'G': g => { g.f(0); g.r(0, 0, 16, 3, 2); g.r(2, 3, 4, 12, 3); g.r(10, 3, 4, 12, 3); g.r(3, 5, 2, 1, 0); g.r(11, 5, 2, 1, 1); g.r(6, 8, 4, 1, 2); },
+  'O': g => { g.f(1); for (let j = 1; j < 16; j += 4) for (let i = (j % 8) ? 0 : 2; i < 16; i += 5) g.r(i, j, 3, 1, 0); g.r(6, 4, 4, 9, 2); g.r(7, 2, 2, 3, 3); g.r(5, 12, 6, 2, 3); g.p(7, 1, 0); g.p(8, 0, 0); },
+  'a': g => { g.f(2); [[3, 3], [12, 6], [7, 12], [1, 9], [14, 14]].forEach(([x, y]) => g.p(x, y, 3)); g.r(3, 9, 5, 2, 1); g.p(10, 2, 1); },
+  'H': g => { g.f(2); g.r(1, 1, 14, 15, 3); for (let y = 2; y < 16; y += 2) g.r(2, y, 12, 1, 2); g.r(5, 6, 6, 3, 1); g.p(12, 10, 1); },
+  'M': g => { g.f(3); g.r(1, 1, 6, 6, 1); g.r(9, 1, 6, 6, 0); g.r(1, 9, 6, 5, 0); g.r(9, 9, 6, 5, 1); g.r(2, 3, 4, 1, 3); g.r(10, 4, 3, 1, 2); g.r(2, 11, 3, 1, 2); g.r(10, 11, 4, 1, 3); },
+  'Z': g => { g.f(1); for (let x = 0; x < 16; x += 4) g.r(x, 0, 1, 12, 2); g.r(0, 12, 16, 4, 3); g.r(1, 1, 14, 10, 2); g.r(2, 2, 12, 8, 0); for (let k = 0; k < 9; k++) { g.p(3 + k, 3 + (k >> 1), 3); g.p(12 - k, 4 + (k >> 2), 3); } [[3, 3], [12, 4], [8, 8], [5, 7]].forEach(([x, y]) => g.r(x, y, 2, 2, 3)); },
+  'X': g => { g.f(1); g.r(0, 4, 16, 8, 2); g.r(0, 4, 16, 1, 3); g.r(0, 11, 16, 1, 3); g.r(1, 12, 2, 4, 3); g.r(13, 12, 2, 4, 3); g.r(4, 0, 8, 6, 3); g.r(5, 1, 6, 4, 0); g.r(6, 2, 3, 1, 3); g.r(6, 3, 4, 1, 1); g.r(3, 6, 10, 2, 3); g.p(13, 7, 0); },
+  'Q': g => { g.f(3); g.r(2, 1, 12, 14, 2); for (let y = 2; y < 14; y += 3) { g.r(3, y, 10, 2, 3); g.p(11, y, 0); g.p(9, y, 1); } },
+  'i': g => { g.f(1); g.r(3, 0, 10, 16, 0); frame2(g); g.r(3, 0, 1, 16, 3); g.r(12, 0, 1, 16, 3); g.r(3, 6, 10, 1, 2); g.r(10, 3, 1, 2, 3); g.r(10, 8, 1, 3, 3); },
+  'j': g => { g.f(1); g.r(0, 0, 16, 1, 2); g.r(0, 0, 1, 16, 2); g.p(6, 5, 2); g.p(11, 11, 2); },
   'm': g => { wood(g); g.r(1, 3, 14, 10, 2); g.r(2, 5, 12, 1, 1); g.r(2, 8, 12, 1, 1); g.r(2, 11, 12, 1, 1); },
 };
 function frame2(g) { g.r(0, 0, 16, 1, 3); g.r(0, 15, 16, 1, 3); g.r(0, 0, 1, 16, 3); g.r(15, 0, 1, 16, 3); }
 const TILES = {};
 for (const k in TILE_FN) TILES[k] = mkTile(TILE_FN[k]);
-const SOLID = new Set('#B^qnTVLhFWYKPbCcktExp'.split(''));
+const SOLID = new Set('#B^qnTVLhFWYKPbCcktExpGOMZXQi'.split(''));
 const TILE_TEXT = {
   V: 'A vending machine. In Ikebukuro, these count as ammunition.',
   L: 'A streetlamp, bent at a suspicious angle. You can guess why.',
@@ -300,6 +313,8 @@ const TILE_TEXT = {
   p: 'A plant. It has excellent opinions and keeps them to itself.',
   t: 'A small table. Someone left a chopstick wrapper folded into a crane.',
   n: 'Neon hums overhead.',
+  G: "Ticket gates. Trains to Shinjuku leave every few minutes. Ikebukuro isn't done with you yet.",
+  O: 'The fountain at West Gate Park. Coins at the bottom. Wishes nobody will admit to.',
 };
 
 /* ---------------- STATE ---------------- */
@@ -308,7 +323,7 @@ const STAT_NAMES = { manip: 'MANIPULATION', intel: 'INFO NETWORK', escape: 'PARK
 const STAT_SHORT = { manip: 'MANIP', intel: 'INTEL', escape: 'ESCAPE', foresight: 'FORESIGHT' };
 const REL_NAMES = { mikado: 'MIKADO', masaomi: 'MASAOMI', celty: 'CELTY', shizuo: 'SHIZUO', simon: 'SIMON', anri: 'ANRI', kadota: 'KADOTA', shinra: 'SHINRA' };
 const REL_START = { mikado: 0, masaomi: -20, celty: 0, shizuo: -50, simon: 10, anri: 0, kadota: 0, shinra: 15 };
-const SAVE_KEY = 'ikebukuro_gambit_v1', OPT_KEY = 'ikebukuro_gambit_opt';
+const SAVE_KEY = 'ikebukuro_gambit_v2', OPT_KEY = 'ikebukuro_gambit_opt';
 
 const G = {
   frame: 0, mode: 'title', map: null, mapId: null, p: null, npcs: [], busy: 0,
@@ -319,7 +334,7 @@ const G = {
 function resetState() {
   Object.assign(G, {
     npcs: [], flags: {}, xp: { manip: 0, intel: 0, escape: 0, foresight: 0 },
-    rel: Object.assign({}, REL_START), seeds: {}, bloomed: {}, chapter: 0, time: 0, wins: 0, observer: false,
+    rel: Object.assign({}, REL_START), seeds: {}, bloomed: {}, chapter: 0, time: 0, wins: 0, observer: false, yen: 10000,
     toasts: [], emotes: [], B: null, C: null, chat: null,
     p: { x: 0, y: 0, dir: 'down', moving: false, prog: 0, step: 0, speed: 1 },
   });
@@ -586,7 +601,7 @@ async function ask(prompt, items, o) {
 }
 
 class Panel {
-  constructor(drawFn, o) { this.drawFn = drawFn; this.o = o || {}; this.sel = 0; }
+  constructor(drawFn, o) { this.drawFn = drawFn; this.o = o || {}; this.sel = 0; this.full = true; }
   update() {
     if (this.age < 1) return;
     const n = this.o.n || 0;
@@ -637,7 +652,7 @@ const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
 const CH2DIR = { U: 'up', D: 'down', L: 'left', R: 'right' };
 function tileAt(x, y) { const m = G.map; if (!m || y < 0 || y >= m.rows.length || x < 0 || x >= m.rows[0].length) return 'x'; return m.rows[y][x]; }
 function warpAt(x, y) { return G.map.warps && G.map.warps[x + ',' + y]; }
-function tileSolid(x, y) { const c = tileAt(x, y); if (c === 'D') return !warpAt(x, y); return SOLID.has(c); }
+function tileSolid(x, y) { const c = tileAt(x, y); if (c === 'D') return !warpAt(x, y); if (c === 'H') return !G.flags.hqFound; return SOLID.has(c); }
 function npcAt(x, y, self) { return G.npcs.find(n => n !== self && !n.gone && ((n.x === x && n.y === y) || (n.moving && n.tx === x && n.ty === y))); }
 function blocked(x, y, self) {
   if (tileSolid(x, y)) return true;
@@ -815,6 +830,7 @@ function drawWorld() {
   ents.push({ e: G.p, spr: SPR.izaya });
   ents.sort((a, b) => entPos(a.e)[1] - entPos(b.e)[1]);
   for (const o of ents) drawEnt(o.e, o.spr, cx, cy);
+  if (G.observer) for (const s of m.spots || []) if (!s.when || s.when()) bubble(s.x * 16 - cx + 3, s.y * 16 - cy - 12, '?');
   if (G.observer) for (const n of G.npcs) {
     if (!n.secret || n.gone || G.flags['sec_' + n.id]) continue;
     const [px, py] = entPos(n); const can = lvl('intel') >= n.secret.lv;
@@ -915,6 +931,7 @@ async function battle(def) {
         if (m.rage) { B.foe.rage++; await say(null, `${def.name} is getting angry!`); }
       }
     } else if (act === 'read') {
+      G.flags['read_' + def.ch] = true;
       await say(null, `IZAYA studies ${def.name}...`);
       await say(null, def.read);
     } else if (act === 'dodge') {
@@ -1112,7 +1129,7 @@ function drawTitle() {
 
 /* ---------------- MENUS & SAVE ---------------- */
 function saveGame() {
-  const s = { mapId: G.mapId, x: G.p.x, y: G.p.y, dir: G.p.dir, flags: G.flags, xp: G.xp, rel: G.rel, seeds: G.seeds, bloomed: G.bloomed, chapter: G.chapter, time: G.time, wins: G.wins };
+  const s = { mapId: G.mapId, x: G.p.x, y: G.p.y, dir: G.p.dir, flags: G.flags, xp: G.xp, rel: G.rel, seeds: G.seeds, bloomed: G.bloomed, chapter: G.chapter, time: G.time, wins: G.wins, yen: G.yen };
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); return true; } catch (e) { return false; }
 }
 function hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } }
@@ -1120,7 +1137,7 @@ function loadSave() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (!s) return false;
     resetState();
-    Object.assign(G, { flags: s.flags || {}, xp: Object.assign(G.xp, s.xp), rel: Object.assign(G.rel, s.rel), seeds: s.seeds || {}, bloomed: s.bloomed || {}, chapter: s.chapter, time: s.time, wins: s.wins || 0 });
+    Object.assign(G, { flags: s.flags || {}, xp: Object.assign(G.xp, s.xp), rel: Object.assign(G.rel, s.rel), seeds: s.seeds || {}, bloomed: s.bloomed || {}, chapter: s.chapter, time: s.time, wins: s.wins || 0, yen: s.yen === undefined ? 10000 : s.yen });
     loadMap(s.mapId, s.x, s.y, s.dir);
     return true;
   } catch (e) { return false; }
@@ -1139,7 +1156,7 @@ function drawStats() {
     y += 20;
   }
   text(`WINS ${G.wins}   SEEDS ${Object.keys(G.seeds).length}/${Object.keys(SEEDS).length}`, 8, 116, 3);
-  text(G.time > 0 ? `TIME ◷${G.time}` : 'TIME ◷0', 8, 128, 2);
+  text(`TIME ◷${G.time}   CASH ¥${(G.yen || 0).toLocaleString('en-US')}`, 8, 128, 2);
 }
 function drawPeople() {
   rect(0, 0, W, H, 0); box(0, 0, 160, 144);
@@ -1229,7 +1246,7 @@ function render() {
   else if (G.mode === 'title') drawTitle();
   else if (G.mode === 'results') drawResults();
   for (const w of UI) w.draw();
-  if (G.toasts.length && (G.mode === 'world' || G.mode === 'chat')) {
+  if (G.toasts.length && (G.mode === 'world' || G.mode === 'chat') && !UI.some(w => w.full && G.mode === 'world')) {
     const s = G.toasts[0].s, w = [...s].length * 6 + 10;
     const y = G.mode === 'chat' ? 13 : (G.mode === 'world' ? 16 : 0);
     box(0, y, w, 14); text(s, 5, y + 4, 3);
