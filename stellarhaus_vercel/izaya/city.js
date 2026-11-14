@@ -86,7 +86,6 @@ const IKE_DOORS = {
   '40,7': "A manga cafe. Erika's first home.",
   '47,7': 'Tokyu Hands. Everything a person could want, except meaning.',
   '54,7': "A ramen shop. Walker's favorite. He's been banned twice.",
-  '44,16': 'A karaoke bar. Someone inside is murdering a love song.',
   '49,16': "Game center. The high score belongs to 'KANRA'. Wasn't you. Probably.",
   '36,26': 'Pachinko. Thousands of silver balls, all falling exactly where physics tells them. Boring.',
   '49,26': 'A maid cafe. The maids recognize you and stop smiling.',
@@ -179,7 +178,7 @@ const APPS = [
   { id: 'board', n: 'BOARD', d: 'Your scheme web. Hints for seeds you have not planted.' },
   { id: 'market', n: 'MARKET', d: 'Sell secrets you observed. Buy time, gifts, and favors.' },
   { id: 'bbs', n: 'BBS', d: 'The Dollars forum. Post a rumor and bend the city.' },
-  { id: 'sim', n: 'SIM', d: 'Rehearse a mind battle against an AI proxy. Free XP.' },
+  { id: 'sim', n: 'SIM', d: 'Practice Mau-Mau, Reversi, Superhirn or Kniffel vs an AI. Free XP.' },
   { id: 'todo', n: 'NEXT', d: 'Ask the board what your next move should be.' },
   { id: 'off', n: 'OFF', d: 'Close the laptop.' },
 ];
@@ -314,7 +313,6 @@ const DOSSIER = {
   shinra:  { role: 'Underground doctor. "Friend."', wants: 'Celty. Only ever Celty.', tip: 'Ask about Celty. Listen for an hour.' },
   rio:     { role: 'Girl from the suicide site.', wants: 'To be seen.', tip: 'Logic, not pity.', battle: 'rio' },
 };
-function weakKnown(b) { return lvl('intel') >= 3 || G.flags['read_' + BATTLES[b].ch]; }
 async function appFiles() {
   for (;;) {
     const ids = Object.keys(DOSSIER);
@@ -335,10 +333,7 @@ function drawDossier(id) {
   if (G.rel[id] !== undefined) { text('♥ ' + (G.rel[id] > 0 ? '+' : '') + G.rel[id], 7, y, 3); y += 11; }
   put('WANTS: ' + D.wants, 3);
   put('TIP: ' + D.tip, 3);
-  if (D.battle) {
-    const B = BATTLES[D.battle];
-    put(weakKnown(D.battle) ? (B.immune ? 'WEAK: nothing. RUN.' : `WEAK: ${(B.weak || []).join('/')}` + (B.resist ? `  RESISTS: ${B.resist.join('/')}` : '')) : 'WEAK: ??? (READ them in a battle, or INTEL Lv3)', weakKnown(D.battle) ? 3 : 2);
-  }
+  if (D.battle) { const g = BATTLES[D.battle].game; put(`DUEL: ${GAME_NAMES[g]}. ${GAME_TIPS[g]}`, 3); }
   const sec = G.flags['sec_' + id];
   y = Math.max(y, 122);
   text(sec ? '✦ SECRET ON FILE' : '§ No secret yet. OBSERVE', 7, Math.min(y, 132), sec ? 3 : 2);
@@ -444,25 +439,20 @@ async function appBBS() {
   if (r === 'y') { G.flags.r_scarf = true; rel('masaomi', -10); await N('Yellow bandanas trend for an hour. Somewhere, Kida stares at his phone.'); await gainXP('manip', 2); }
 }
 
-/* ---- SIM: mind battle rehearsal ---- */
+/* ---- SIM: rehearse any duel game ---- */
 async function appSim() {
   const ch = G.chapter;
   if (G.flags['sim' + ch]) { await N('SIMULATOR: cooling down. One rehearsal per chapter.'); return; }
-  const types = ['CHARM', 'LOGIC', 'PROVOKE', 'INTEL'];
-  const wk = types[Math.floor(Math.random() * 4)];
-  await N('SIMULATOR: building a proxy from 10,000 chat logs...');
+  const g = await ask('SIMULATOR: rehearse which game?', [
+    { t: 'MAU-MAU', v: 'maumau', d: GAME_TIPS.maumau }, { t: 'REVERSI', v: 'reversi', d: GAME_TIPS.reversi },
+    { t: 'SUPERHIRN', v: 'superhirn', d: GAME_TIPS.superhirn }, { t: 'KNIFFEL', v: 'kniffel', d: GAME_TIPS.kniffel }, { t: 'Cancel', v: 'x' }], { cancel: true });
+  if (!g || g === 'x') return;
   G.flags['sim' + ch] = true;
-  const winsBefore = G.wins;
-  const res = await battle({
-    name: 'PROXY', ch: 'dollar2', hp: 24, weak: [wk],
-    intro: 'A simulated stranger flickers into being.',
-    read: `Simulated weakness: ${wk}. In real fights, READ first, then hit the weak spot.`,
-    counters: [{ t: 'PROXY recites a statistically average insult.', d: 4 }, { t: 'PROXY glitches menacingly.', d: 3 }],
-    winText: 'SIMULATION COMPLETE.',
-  });
-  G.wins = winsBefore;
-  if (res === 'win') { await gainXP('manip', 1); await gainXP('foresight', 2); }
-  else await gainXP('foresight', 1);
+  const pm = AU.track; music('battle');
+  const win = await GAME_FN[g]({ name: 'PROXY', ch: 'dollar2', err: 0.35, lines: ['PROXY: "Processing..."', 'PROXY glitches thoughtfully.'], solved: 'PROXY: "Pattern matched."' });
+  music(pm);
+  const stat = { maumau: 'manip', reversi: 'foresight', superhirn: 'intel', kniffel: 'foresight' }[g];
+  await gainXP(stat, win ? 3 : 1);
 }
 
 /* ---- NEXT: objective hints ---- */
@@ -473,6 +463,7 @@ async function appTodo() {
     else if (!G.flags.rooftopDone) tips.push('Your "date" waits on the roof: the ROOF ACCESS door, south side of Sunshine 60 St. The day ends after.');
     if (!G.flags.shizuoGone && !G.flags.shizuoLured) tips.push('Shizuo patrols Sunshine 60 St. Use OBSERVER MODE or the BBS to dodge him.');
     if (unsoldSecrets().length) tips.push('You have secrets to sell on the MARKET.');
+    if (!G.flags.pk_cash1 || !G.flags.pk_info1) tips.push("The KARAOKE bar hides a heads-up poker room: Shiki plays for yen, Akabayashi pays in secrets. Dennis rolls Kniffel inside Russia Sushi.");
     const open = Object.keys(SEEDS).filter(id => !G.seeds[id] && ['courier', 'dollars', 'yagiri', 'van', 'slasher', 'anri'].includes(id));
     if (open.length) tips.push(`${open.length} seeds can still be planted today. Check the BOARD.`);
   }

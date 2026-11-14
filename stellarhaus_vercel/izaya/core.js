@@ -885,101 +885,6 @@ function drawCard() {
   wrap(G.card.sub, 24).forEach((l, k) => textC(l, 72 + k * 11, 1));
 }
 
-/* ---------------- BATTLE ---------------- */
-const MOVES = [
-  { id: 'charm', n: 'CHARM', type: 'CHARM', pow: 6, stat: 'manip', d: 'CHARM: A smile with a hook in it.' },
-  { id: 'reason', n: 'REASON', type: 'LOGIC', pow: 6, stat: 'foresight', d: 'LOGIC: Calm, patient, cold.' },
-  { id: 'needle', n: 'NEEDLE', type: 'PROVOKE', pow: 9, stat: 'manip', rage: 1, d: 'PROVOKE: Poke the sore spot. They hit back harder.' },
-  { id: 'expose', n: 'EXPOSE', type: 'INTEL', pow: 11, stat: 'intel', pp: 2, req: { stat: 'intel', lv: 2 }, d: 'INTEL: Reveal a buried secret. 2 uses.' },
-  { id: 'mate', n: 'CHECKMATE', type: 'LOGIC', pow: 18, stat: 'foresight', fin: true, req: { stat: 'foresight', lv: 3 }, d: 'LOGIC: Finisher. Only works at half resolve or less.' },
-];
-async function battle(def) {
-  const pm = G.mode, pmus = AU.track;
-  sfx('alarm');
-  for (let k = 0; k < 3; k++) { G.fade = -3; await frames(4); G.fade = 0; await frames(4); }
-  await fadeTo(3, 3);
-  const rv = def.rel ? (G.rel[def.rel] || 0) : 0;
-  const max = Math.max(15, def.hp - Math.round(rv / 4) - (def.bonus ? def.bonus() : 0));
-  const mh = 20 + 4 * lvl('foresight');
-  const B = G.B = { def, foe: { hp: max, max, rage: 0 }, me: { hp: mh, max: mh }, pp: { expose: 2 }, shake: 0, meShake: 0, turn: 0, slide: 96 };
-  G.mode = 'battle'; music('battle');
-  await fadeTo(0, 3);
-  while (B.slide > 0) { B.slide = Math.max(0, B.slide - 3); await frames(1); }
-  await say(null, def.intro);
-  let result = null;
-  while (!result) {
-    const act = await ask(null, [{ t: 'TALK', v: 'talk' }, { t: 'READ', v: 'read' }, { t: 'DODGE', v: 'dodge' }, { t: 'FLEE', v: 'flee' }], { grid: true });
-    let guard = false;
-    if (act === 'talk') {
-      const items = MOVES.map(m => ({ t: m.n + (m.pp ? ` ${B.pp[m.id]}/${m.pp}` : ''), v: m.id, req: m.req, d: m.d, dis: m.pp && B.pp[m.id] <= 0, disWhy: '§ No uses left' }));
-      const mv = await ask(null, items, { cancel: true, pos: 'bottom' });
-      if (!mv) continue;
-      const m = MOVES.find(x => x.id === mv);
-      if (m.pp) B.pp[m.id]--;
-      await say(null, `IZAYA used ${m.n}!`);
-      if (def.immune) { sfx('bump'); await say(null, `It had no effect on ${def.name}...`); }
-      else if (m.fin && B.foe.hp > B.foe.max / 2) { sfx('bump'); await say(null, "Too early. The board isn't ready."); }
-      else {
-        let mult = 1;
-        if ((def.weak || []).includes(m.type)) mult = 2;
-        if ((def.resist || []).includes(m.type)) mult = 0.5;
-        const dmg = Math.max(1, Math.round(m.pow * (0.8 + 0.2 * lvl(m.stat)) * mult * (0.85 + Math.random() * 0.15)));
-        B.foe.hp = Math.max(0, B.foe.hp - dmg); B.shake = 14; sfx('hit');
-        await frames(16);
-        if (mult > 1) await say(null, 'It struck a nerve!');
-        else if (mult < 1) await say(null, `${def.name} shrugged it off.`);
-        if (m.rage) { B.foe.rage++; await say(null, `${def.name} is getting angry!`); }
-      }
-    } else if (act === 'read') {
-      G.flags['read_' + def.ch] = true;
-      await say(null, `IZAYA studies ${def.name}...`);
-      await say(null, def.read);
-    } else if (act === 'dodge') {
-      guard = true; const h = 4 + 2 * lvl('escape');
-      B.me.hp = Math.min(B.me.max, B.me.hp + h); sfx('ok');
-      await say(null, `IZAYA sidesteps, smiling. Composure +${h}.`);
-    } else if (act === 'flee') {
-      if (def.noFlee) { await say(null, "Run? Now? Where's the fun in that?"); continue; }
-      sfx('door'); await say(null, def.immune ? 'Time to run!' : 'IZAYA slips away into the crowd.');
-      result = 'flee'; break;
-    }
-    if (B.foe.hp <= 0) { result = 'win'; break; }
-    B.turn++;
-    const c = def.counters[Math.floor(Math.random() * def.counters.length)];
-    await say(null, c.t);
-    if (Math.random() < 0.06 * lvl('foresight') && !def.immune) { sfx('ok'); await say(null, 'You saw it coming! No damage.'); }
-    else {
-      const d = Math.max(1, Math.round(c.d * (1 + 0.25 * B.foe.rage) * (guard ? 0.5 : 1)));
-      B.me.hp = Math.max(0, B.me.hp - d); B.meShake = 14; sfx('hit'); await frames(16);
-    }
-    if (B.me.hp <= 0) { result = 'lose'; break; }
-    if (def.forceFleeAfter && B.turn >= def.forceFleeAfter) { await say(null, def.forceText || 'RUN!'); result = 'flee'; }
-  }
-  if (result === 'win') { sfx('lvl'); await say(null, def.winText || `${def.name}'s resolve broke!`); G.wins++; }
-  if (result === 'lose') await say(null, def.loseText || 'IZAYA lost his composure... and laughed it off.');
-  await fadeTo(3, 3);
-  G.mode = pm; G.B = null; music(pmus);
-  await fadeTo(0, 3);
-  return result;
-}
-function drawBattle() {
-  const B = G.B; rect(0, 0, W, H, 0);
-  for (let y = 0; y < 96; y += 6) rect(0, y, W, 1, (y / 6) % 3 === 0 ? 1 : 0);
-  const sl = B.slide;
-  const fx = 104 + sl + (B.shake ? ((B.shake-- >> 1) % 2 ? 2 : -2) : 0);
-  rect(96 + sl, 38, 56, 4, 1); rect(100 + sl, 42, 48, 2, 2);
-  if (!(B.shake % 4 === 1)) blit(SPR[B.def.ch].down0, fx, 6, { scale: 2 });
-  box(2, 4, 82, 30); text(B.def.name, 8, 9, 3);
-  text('RES', 8, 21, 3); bar(30, 22, 48, B.def.immune ? 1 : B.foe.hp / B.foe.max);
-  const mx = 14 - sl + (B.meShake ? ((B.meShake-- >> 1) % 2 ? 2 : -2) : 0);
-  rect(4 - sl, 86, 56, 4, 1); rect(8 - sl, 90, 48, 2, 2);
-  blit(SPR.izaya.up0, mx, 54, { scale: 2 });
-  box(76, 54, 84, 38); text('IZAYA', 82, 59, 3);
-  text('CMP', 82, 70, 3); bar(104, 71, 50, B.me.hp / B.me.max);
-  text(`${B.me.hp}/${B.me.max}`, 106, 80, 3);
-  if (!UI.length) box(0, 96, 160, 48);
-}
-
 /* ---------------- CHASE MINIGAME ---------------- */
 const LANES = [36, 60, 84, 108];
 function chase(o) {
@@ -1239,7 +1144,6 @@ function tick() {
 }
 function render() {
   if (G.mode === 'world') drawWorld();
-  else if (G.mode === 'battle') drawBattle();
   else if (G.mode === 'chase') drawChase();
   else if (G.mode === 'chat') drawChat();
   else if (G.mode === 'card') drawCard();

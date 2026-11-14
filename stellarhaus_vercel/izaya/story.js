@@ -57,38 +57,33 @@ async function puzzle(kind, idx) {
   sfx('bump'); await N('Wrong. ' + P.e); await gainXP(stat, 1); return false;
 }
 
-/* ---------------- BATTLES ---------------- */
+/* ---------------- DUELS (each rival plays a different game) ---------------- */
 const BATTLES = {
   masaomi: {
-    name: 'MASAOMI', ch: 'masaomi', hp: 34, rel: 'masaomi', weak: ['INTEL'], resist: ['CHARM'],
-    bonus: () => (G.flags.masaomiRead ? 8 : 0),
-    intro: 'MASAOMI steps between you and Mikado!',
-    read: 'He clowns to hide guilt. Something about a girl named Saki. INTEL cuts deep. CHARM bounces off.',
-    counters: [{ t: 'MASAOMI cracks a terrible pun. It is somehow hurtful.', d: 4 }, { t: "MASAOMI: 'Stay away from him, Izaya.'", d: 6 }, { t: "MASAOMI glares. 'I know what you did.'", d: 5 }],
-    winText: 'MASAOMI looks away first.',
+    name: 'MASAOMI', ch: 'masaomi', game: 'maumau',
+    intro: 'MASAOMI steps between you and Mikado. He pulls a worn deck of cards from his hoodie.',
+    winText: 'MASAOMI stares at his cards, then looks away first.',
+    loseText: 'MASAOMI slaps down his last card with a grin. You lost... and laughed it off.',
   },
   rio: {
-    name: 'RIO', ch: 'rio', hp: 32, weak: ['LOGIC'], resist: ['PROVOKE'], noFlee: true,
-    intro: 'RIO grips the railing. Wind tugs at her coat.',
-    read: 'She wants to be seen, not saved. LOGIC about what death really means will reach her. Needling will push her away.',
-    counters: [{ t: "RIO: 'You don't know what it's like!'", d: 5 }, { t: 'RIO grips the railing tighter.', d: 4 }, { t: "RIO: 'Stop smiling at me!'", d: 6 }],
+    name: 'RIO', ch: 'rio', game: 'superhirn',
+    intro: 'RIO grips the railing. To reach her, you have to understand what she really feels.',
+    lines: ["RIO: 'You don't know what it's like.'", 'RIO grips the railing tighter.', "RIO: '...Not quite.'", "RIO: 'Why do you care?'", 'RIO looks at you, really looks, for a second.'],
+    solved: "RIO: '...How did you know?'",
     winText: "RIO's despair cracks. She steps back from the edge.",
     loseText: 'RIO stops listening. She turns toward the edge...',
   },
   shizuo: {
-    name: 'SHIZUO', ch: 'shizuo', hp: 999, immune: true, forceFleeAfter: 1,
+    name: 'SHIZUO', ch: 'shizuo', game: 'run',
     intro: 'SHIZUO rips a street sign out of the ground!',
-    read: 'Words are useless here. Legs are not.',
-    counters: [{ t: 'SHIZUO swings the street sign like a baseball bat!', d: 9 }, { t: 'SHIZUO hurls a trash can at you!', d: 7 }],
-    forceText: "He's lifting a vending machine. RUN!",
+    forceText: "No game works on him. He's lifting a vending machine. RUN!",
   },
   mikado: {
-    name: 'MIKADO', ch: 'mikado', hp: 46, rel: 'mikado', weak: ['LOGIC', 'INTEL'], resist: ['PROVOKE'], noFlee: true,
-    bonus: () => (G.seeds.taro ? 10 : 0) + (G.seeds.dollars ? 4 : 0),
-    intro: 'MIKADO squares his shoulders. He is shaking, but he does not run.',
-    read: 'He craves the extraordinary and is terrified of it. LOGIC and INTEL will open him up. Provoking him makes him stubborn.',
-    counters: [{ t: "MIKADO: 'I won't be your chess piece!'", d: 6 }, { t: 'MIKADO grips his phone like a sword.', d: 5 }, { t: "MIKADO: 'The Dollars are my friends!'", d: 7 }],
-    winText: "MIKADO lowers his phone. He's... smiling.",
+    name: 'MIKADO', ch: 'mikado', game: 'reversi',
+    get err() { return Math.min(0.6, 0.15 + (G.seeds.taro ? 0.2 : 0) + (G.seeds.dollars ? 0.1 : 0) + Math.max(0, G.rel.mikado) / 200); },
+    intro: 'You set a travel board on a vending machine. Dark discs for you. Light for him.',
+    winText: 'MIKADO looks at the board, all dark. He is... smiling.',
+    loseText: 'MIKADO flips the last disc to light. His hands have stopped shaking.',
   },
 };
 
@@ -125,7 +120,7 @@ const MAPS = {
     objects: Object.assign(
       Object.fromEntries(Object.entries(IKE_DOORS).map(([k, t]) => [k, () => N(t)])),
       { '24,18': stationDoor, '25,18': stationDoor, '26,18': stationDoor, '27,18': stationDoor,
-        '47,31': hqSecret, '52,32': parkour, '52,33': parkour, '3,11': parkour, '12,11': parkour }),
+        '47,31': hqSecret, '44,16': pokerRoom, '52,32': parkour, '52,33': parkour, '3,11': parkour, '12,11': parkour }),
     npcs: [
       { id: 'mikado', ch: 'mikado', x: 34, y: 21, dir: 'left', when: () => G.chapter === 1, talk: meetMikado,
         secret: { lv: 1, text: 'His phone shows a black login page. His thumb hovers over it like it belongs there.', flag: 'taroHint' } },
@@ -168,9 +163,9 @@ const MAPS = {
     ],
     music: 'city',
     warps: { '4,7': ['ikebukuro', 37, 17, 'down'] },
-    objects: Object.fromEntries([0, 1, 2, 3, 4, 5, 6].map(x => [x + ',2', () => say('DENNIS', G.flags.ateSushi ? 'Simon told me you tipped. Suspicious. Thank you.' : "We're out of fatty tuna. We're always out of fatty tuna. Simon gives it away.")])),
+    objects: Object.fromEntries([0, 1, 2, 3, 4, 5, 6].map(x => [x + ',2', kniffelTable])),
     npcs: [
-      { id: 'dennis', ch: 'dennis', x: 3, y: 1, dir: 'down', talk: () => say('DENNIS', "Simon's outside again? He scares off more customers than he brings in. Don't tell him I said that.") },
+      { id: 'dennis', ch: 'dennis', x: 3, y: 1, dir: 'down', talk: kniffelTable },
       { id: 'yagiriman', ch: 'salary', x: 6, y: 4, dir: 'left', when: () => G.chapter === 1, talk: () => say('CUSTOMER', "Mind your own business. I'm eating."),
         secret: { lv: 2, text: "A YAGIRI PHARMACEUTICALS lanyard under his jacket. Into his phone: 'The girl with the scar on her neck. By Sunday.'", seed: 'yagiri' } },
     ],
@@ -358,7 +353,7 @@ async function meetMikado() {
   await say('MASAOMI', "Mikado, this guy is bad news. Let's go.");
   const r = await ask('How do I play this?', [
     { t: 'Be charming', v: 'charm' },
-    { t: 'Needle Kida-kun', v: 'fight', d: 'Start a mind battle with Masaomi.' },
+    { t: 'Needle Kida-kun', v: 'fight', d: 'Challenge Masaomi to Mau-Mau. MANIP helps.' },
     { t: 'Drop "Dollars"', v: 'dollars', seed: 'dollars', req: { stat: 'intel', lv: 2 } },
     { t: 'Give him a card', v: 'card', req: { stat: 'manip', lv: 2 } },
   ]);
@@ -368,6 +363,8 @@ async function meetMikado() {
     rel('mikado', 10); rel('masaomi', -5); await gainXP('manip', 1);
   } else if (r === 'fight') {
     await I('Still wearing yellow, Kida-kun? Or did that stop after what happened to Saki?');
+    await say('MASAOMI', "...Cards. Right now. I win, you walk away from Mikado.");
+    await I('Mau-Mau? How nostalgic. And if I win, I get five minutes with your friend.');
     const res = await battle(BATTLES.masaomi);
     if (res === 'win') { await say('MASAOMI', "...Let's go, Mikado. Now."); await say('MIKADO', '(He knows something about Masaomi. Something even I don\'t.)'); rel('masaomi', -10); rel('mikado', 15); await gainXP('manip', 1); }
     else { await say('MASAOMI', 'Nice try. Come on, Mikado, I know a great sushi place.'); rel('mikado', -5); rel('masaomi', 5); }
@@ -568,7 +565,7 @@ async function rooftopScene() {
   await say('RIO', "You're... Nakura-san? From the site?");
   await I("That's me. You came. Most people don't.");
   await say('RIO', 'I want to go somewhere without pain. You said you would come with me.');
-  await I('Did I? Hmm. Before we go anywhere, let me ask you something...');
+  await I('Did I? Hmm. Before we go anywhere, let me guess what is really in your head...');
   const res = await battle(BATTLES.rio);
   if (res === 'win') {
     await say('RIO', "I... I don't want to die. I don't...");
@@ -726,6 +723,7 @@ async function finale() {
   if (G.seeds.taro) await bloom('taro', 'You knew from the start. He can see it in your smile.');
   await say('MIKADO', '...Orihara-san. How do you know that name?');
   await I('I know everything worth knowing. Tonight, you became extraordinary. How does it feel?');
+  await I('Play me. One game. Let us see whose color this city turns.');
   const res = await battle(BATTLES.mikado);
   if (res === 'win') {
     await say('MIKADO', '...It feels amazing.');
@@ -794,7 +792,7 @@ function drawResults() {
   let y = 54;
   const ids = Object.keys(SEEDS);
   text(`SEEDS ${Object.keys(G.seeds).length}/${ids.length}  BLOOMED ${Object.keys(G.bloomed).length}`, 8, y, 3); y += 11;
-  text(`MIND BATTLES WON ${G.wins}`, 8, y, 3); y += 11;
+  text(`DUELS & GAMES WON ${G.wins}`, 8, y, 3); y += 11;
   text(`MAN${lvl('manip')} INT${lvl('intel')} ESC${lvl('escape')} FOR${lvl('foresight')}`, 8, y, 3); y += 13;
   const tip = Object.keys(G.seeds).length < ids.length ? 'Some seeds stayed hidden. Try other people, other choices.' : 'Every seed planted. Terrifying.';
   wrap(tip, 24).forEach((l, k) => text(l, 8, y + k * 10, 2));
