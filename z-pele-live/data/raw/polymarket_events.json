@@ -1,0 +1,603 @@
+[
+ {
+  "slug": "bundesliga-2027-champion-20260708164840303",
+  "title": "Bundesliga: 2027 Champion",
+  "endDate": "2027-06-15T03:59:00Z",
+  "markets": [
+   {
+    "id": "2849009",
+    "question": "Will Bayern Munich be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "Bayern Munich",
+    "outcomePrices": "[\"0.875\", \"0.125\"]",
+    "volume": "106907.98535600002",
+    "liquidity": "281698.6029",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "2849010",
+    "question": "Will Borussia Dortmund be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "Borussia Dortmund",
+    "outcomePrices": "[\"0.065\", \"0.935\"]",
+    "volume": "66917.38412",
+    "liquidity": "42342.3148",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "2849011",
+    "question": "Will Bayer Leverkusen be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "Bayer Leverkusen",
+    "outcomePrices": "[\"0.012\", \"0.988\"]",
+    "volume": "57871.184812",
+    "liquidity": "44309.74187",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "2849012",
+    "question": "Will RB Leipzig be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "RB Leipzig",
+    "outcomePrices": "[\"0.01\", \"0.99\"]",
+    "volume": "43167.002904999994",
+    "liquidity": "36126.14748",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "2849013",
+    "question": "Will Eintracht Frankfurt be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "Eintracht Frankfurt",
+    "outcomePrices": "[\"0.005\", \"0.995\"]",
+    "volume": "82595.09494899999",
+    "liquidity": "39371.61941",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "2849014",
+    "question": "Will VfB Stuttgart be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "VfB Stuttgart",
+    "outcomePrices": "[\"0.002\", \"0.998\"]",
+    "volume": "67094.102806",
+    "liquidity": "47133.43325",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "2849015",
+    "question": "Will TSG Hoffenheim be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "TSG Hoffenheim",
+    "outcomePrices": "[\"0.0015\", \"0.9985\"]",
+    "volume": "79775.37466500001",
+    "liquidity": "26825.42955",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "2849016",
+    "question": "Will SC Freiburg be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "SC Freiburg",
+    "outcomePrices": "[\"0.011\", \"0.989\"]",
+    "volume": "76743.68103499999",
+    "liquidity": "31916.62599",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "2849017",
+    "question": "Will Mainz 05 be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "Mainz 05",
+    "outcomePrices": "[\"0.0015\", \"0.9985\"]",
+    "volume": "97966.22419900003",
+    "liquidity": "24988.95811",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "2849018",
+    "question": "Will Borussia M\u00f6nchengladbach be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "Borussia M\u00f6nchengladbach",
+    "outcomePrices": "[\"0.0005\", \"0.9995\"]",
+    "volume": "77590.34650000001",
+    "liquidity": "32230.14473",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "2849019",
+    "question": "Will 1. FC K\u00f6ln be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "1. FC K\u00f6ln",
+    "outcomePrices": "[\"0.001\", \"0.999\"]",
+    "volume": "66558.88450000001",
+    "liquidity": "30841.93845",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "2849020",
+    "question": "Will FC Augsburg be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "FC Augsburg",
+    "outcomePrices": "[\"0.0065\", \"0.9935\"]",
+    "volume": "96720.644116",
+    "liquidity": "26078.46303",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "2849021",
+    "question": "Will Union Berlin be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "Union Berlin",
+    "outcomePrices": "[\"0.001\", \"0.999\"]",
+    "volume": "113265.97200000001",
+    "liquidity": "29008.28046",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "2849022",
+    "question": "Will Werder Bremen be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "Werder Bremen",
+    "outcomePrices": "[\"0.0075\", \"0.9925\"]",
+    "volume": "115769.285933",
+    "liquidity": "35557.84045",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "2849023",
+    "question": "Will Hamburger SV be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "Hamburger SV",
+    "outcomePrices": "[\"0.001\", \"0.999\"]",
+    "volume": "125596.324",
+    "liquidity": "34917.10579",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "2849024",
+    "question": "Will Schalke 04 be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "Schalke 04",
+    "outcomePrices": "[\"0.0015\", \"0.9985\"]",
+    "volume": "80803.15353200001",
+    "liquidity": "28585.27144",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "2849025",
+    "question": "Will SC Paderborn be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "SC Paderborn",
+    "outcomePrices": "[\"0.001\", \"0.999\"]",
+    "volume": "80686.21371199998",
+    "liquidity": "38673.31545",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "2849026",
+    "question": "Will SV Elversberg be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "SV Elversberg",
+    "outcomePrices": "[\"0.0005\", \"0.9995\"]",
+    "volume": "57543.461089",
+    "liquidity": "26421.43363",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "2849027",
+    "question": "Will Team A be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "Team A",
+    "outcomePrices": "[\"0.5\", \"0.5\"]",
+    "volume": "0",
+    "liquidity": "0",
+    "active": false,
+    "closed": false
+   },
+   {
+    "id": "2849028",
+    "question": "Will Team B be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "Team B",
+    "outcomePrices": "[\"0.5\", \"0.5\"]",
+    "volume": "0",
+    "liquidity": "0",
+    "active": false,
+    "closed": false
+   },
+   {
+    "id": "2849029",
+    "question": "Will Team C be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "Team C",
+    "outcomePrices": "[\"0.5\", \"0.5\"]",
+    "volume": "0",
+    "liquidity": "0",
+    "active": false,
+    "closed": false
+   },
+   {
+    "id": "2849030",
+    "question": "Will another team be the 2026-27 Bundesliga champion?",
+    "groupItemTitle": "Other",
+    "outcomePrices": "[\"0.5\", \"0.5\"]",
+    "volume": "0",
+    "liquidity": "0",
+    "active": false,
+    "closed": false
+   }
+  ]
+ },
+ {
+  "slug": "bundesliga-top-4-finishers-2026-27",
+  "title": "Bundesliga Top 4 Finishers (2026-27)",
+  "endDate": "2027-06-06T03:59:00Z",
+  "markets": [
+   {
+    "id": "3948081",
+    "question": "Will Bayern Munich finish in the top 4 of the 2026-27 Bundesliga season?",
+    "groupItemTitle": "Bayern Munich",
+    "outcomePrices": "[\"0.98\", \"0.02\"]",
+    "volume": "930.7",
+    "liquidity": "270.28572",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3948083",
+    "question": "Will Borussia Dortmund finish in the top 4 of the 2026-27 Bundesliga season?",
+    "groupItemTitle": "Borussia Dortmund",
+    "outcomePrices": "[\"0.875\", \"0.125\"]",
+    "volume": "577.647631",
+    "liquidity": "152.0279",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3948085",
+    "question": "Will Bayer Leverkusen finish in the top 4 of the 2026-27 Bundesliga season?",
+    "groupItemTitle": "Bayer Leverkusen",
+    "outcomePrices": "[\"0.69\", \"0.31\"]",
+    "volume": "309.90909100000005",
+    "liquidity": "285.5067",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3948087",
+    "question": "Will RB Leipzig finish in the top 4 of the 2026-27 Bundesliga season?",
+    "groupItemTitle": "RB Leipzig",
+    "outcomePrices": "[\"0.665\", \"0.335\"]",
+    "volume": "993.95561",
+    "liquidity": "1078.3281",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3948089",
+    "question": "Will Eintracht Frankfurt finish in the top 4 of the 2026-27 Bundesliga season?",
+    "groupItemTitle": "Eintracht Frankfurt",
+    "outcomePrices": "[\"0.0615\", \"0.9385\"]",
+    "volume": "507",
+    "liquidity": "229.2399",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3948091",
+    "question": "Will VfB Stuttgart finish in the top 4 of the 2026-27 Bundesliga season?",
+    "groupItemTitle": "VfB Stuttgart",
+    "outcomePrices": "[\"0.295\", \"0.705\"]",
+    "volume": null,
+    "liquidity": "523.3975",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3948093",
+    "question": "Will TSG Hoffenheim finish in the top 4 of the 2026-27 Bundesliga season?",
+    "groupItemTitle": "TSG Hoffenheim",
+    "outcomePrices": "[\"0.115\", \"0.885\"]",
+    "volume": "262.57962000000003",
+    "liquidity": "168.7697",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3948095",
+    "question": "Will SC Freiburg finish in the top 4 of the 2026-27 Bundesliga season?",
+    "groupItemTitle": "SC Freiburg",
+    "outcomePrices": "[\"0.345\", \"0.655\"]",
+    "volume": "387.977248",
+    "liquidity": "525.754",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3948097",
+    "question": "Will Mainz 05 finish in the top 4 of the 2026-27 Bundesliga season?",
+    "groupItemTitle": "Mainz 05",
+    "outcomePrices": "[\"0.43\", \"0.57\"]",
+    "volume": null,
+    "liquidity": "138.2275",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3948099",
+    "question": "Will Borussia M\u00f6nchengladbach finish in the top 4 of the 2026-27 Bundesliga season?",
+    "groupItemTitle": "Borussia M\u00f6nchengladbach",
+    "outcomePrices": "[\"0.0305\", \"0.9695\"]",
+    "volume": null,
+    "liquidity": "263.58298",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3948101",
+    "question": "Will 1. FC K\u00f6ln finish in the top 4 of the 2026-27 Bundesliga season?",
+    "groupItemTitle": "1. FC K\u00f6ln",
+    "outcomePrices": "[\"0.0555\", \"0.9445\"]",
+    "volume": null,
+    "liquidity": "93.11595",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3948103",
+    "question": "Will FC Augsburg finish in the top 4 of the 2026-27 Bundesliga season?",
+    "groupItemTitle": "FC Augsburg",
+    "outcomePrices": "[\"0.08\", \"0.92\"]",
+    "volume": "60",
+    "liquidity": "105.49795",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3948107",
+    "question": "Will Union Berlin finish in the top 4 of the 2026-27 Bundesliga season?",
+    "groupItemTitle": "Union Berlin",
+    "outcomePrices": "[\"0.028\", \"0.972\"]",
+    "volume": "558.28",
+    "liquidity": "244.95747",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3948108",
+    "question": "Will Werder Bremen finish in the top 4 of the 2026-27 Bundesliga season?",
+    "groupItemTitle": "Werder Bremen",
+    "outcomePrices": "[\"0.13\", \"0.87\"]",
+    "volume": null,
+    "liquidity": "69.09796",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3948109",
+    "question": "Will Hamburger SV finish in the top 4 of the 2026-27 Bundesliga season?",
+    "groupItemTitle": "Hamburger SV",
+    "outcomePrices": "[\"0.0355\", \"0.9645\"]",
+    "volume": "4070.7400949999997",
+    "liquidity": "514.12495",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3948110",
+    "question": "Will Schalke 04 finish in the top 4 of the 2026-27 Bundesliga season?",
+    "groupItemTitle": "Schalke 04",
+    "outcomePrices": "[\"0.0235\", \"0.9765\"]",
+    "volume": "1895.0019160000002",
+    "liquidity": "429.18878",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3948115",
+    "question": "Will SC Paderborn finish in the top 4 of the 2026-27 Bundesliga season?",
+    "groupItemTitle": "SC Paderborn",
+    "outcomePrices": "[\"0.0115\", \"0.9885\"]",
+    "volume": "1421.6100000000001",
+    "liquidity": "305.98017",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3948117",
+    "question": "Will SV Elversberg finish in the top 4 of the 2026-27 Bundesliga season?",
+    "groupItemTitle": "SV Elversberg",
+    "outcomePrices": "[\"0.097\", \"0.903\"]",
+    "volume": "116.1575",
+    "liquidity": "210.30832",
+    "active": true,
+    "closed": false
+   }
+  ]
+ },
+ {
+  "slug": "bundesliga-teams-relegated-2026-27",
+  "title": "Bundesliga: Teams relegated (2026-27)",
+  "endDate": "2027-07-01T03:59:00Z",
+  "markets": [
+   {
+    "id": "3848404",
+    "question": "Will Bayer Leverkusen be relegated from the 2026-27 Bundesliga?",
+    "groupItemTitle": "Bayer Leverkusen",
+    "outcomePrices": "[\"0.0235\", \"0.9765\"]",
+    "volume": "295",
+    "liquidity": "1206.56792",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3848405",
+    "question": "Will Bayern Munich be relegated from the 2026-27 Bundesliga?",
+    "groupItemTitle": "Bayern Munich",
+    "outcomePrices": "[\"0.021\", \"0.979\"]",
+    "volume": "610.61",
+    "liquidity": "1443.34692",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3848407",
+    "question": "Will Borussia Dortmund be relegated from the 2026-27 Bundesliga?",
+    "groupItemTitle": "Borussia Dortmund",
+    "outcomePrices": "[\"0.024\", \"0.976\"]",
+    "volume": "1421.52",
+    "liquidity": "822.79025",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3848409",
+    "question": "Will Borussia M\u00f6nchengladbach be relegated from the 2026-27 Bundesliga?",
+    "groupItemTitle": "Borussia M\u00f6nchengladbach",
+    "outcomePrices": "[\"0.465\", \"0.535\"]",
+    "volume": "3603.0227999999993",
+    "liquidity": "7399.4999",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3848411",
+    "question": "Will Eintracht Frankfurt be relegated from the 2026-27 Bundesliga?",
+    "groupItemTitle": "Eintracht Frankfurt",
+    "outcomePrices": "[\"0.06\", \"0.94\"]",
+    "volume": "2931.410828",
+    "liquidity": "2908.4913",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3848413",
+    "question": "Will FC Augsburg be relegated from the 2026-27 Bundesliga?",
+    "groupItemTitle": "FC Augsburg",
+    "outcomePrices": "[\"0.145\", \"0.855\"]",
+    "volume": "2322.593617",
+    "liquidity": "2312.3735",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3848415",
+    "question": "Will 1. FC K\u00f6ln be relegated from the 2026-27 Bundesliga?",
+    "groupItemTitle": "1. FC K\u00f6ln",
+    "outcomePrices": "[\"0.235\", \"0.765\"]",
+    "volume": "1273.949623",
+    "liquidity": "7934.0411",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3848417",
+    "question": "Will FC Schalke 04 be relegated from the 2026-27 Bundesliga?",
+    "groupItemTitle": "FC Schalke 04",
+    "outcomePrices": "[\"0.385\", \"0.615\"]",
+    "volume": "2818.1454689999996",
+    "liquidity": "17206.747",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3848419",
+    "question": "Will Hamburger SV be relegated from the 2026-27 Bundesliga?",
+    "groupItemTitle": "Hamburger SV",
+    "outcomePrices": "[\"0.165\", \"0.835\"]",
+    "volume": "10058.186379",
+    "liquidity": "9364.7356",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3848421",
+    "question": "Will Mainz 05 be relegated from the 2026-27 Bundesliga?",
+    "groupItemTitle": "Mainz 05",
+    "outcomePrices": "[\"0.057\", \"0.943\"]",
+    "volume": "102",
+    "liquidity": "739.25699",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3848423",
+    "question": "Will RB Leipzig be relegated from the 2026-27 Bundesliga?",
+    "groupItemTitle": "RB Leipzig",
+    "outcomePrices": "[\"0.0155\", \"0.9845\"]",
+    "volume": "819.84",
+    "liquidity": "795.32551",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3848425",
+    "question": "Will SC Freiburg be relegated from the 2026-27 Bundesliga?",
+    "groupItemTitle": "SC Freiburg",
+    "outcomePrices": "[\"0.029\", \"0.971\"]",
+    "volume": "1036.44",
+    "liquidity": "1084.932",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3848427",
+    "question": "Will SC Paderborn be relegated from the 2026-27 Bundesliga?",
+    "groupItemTitle": "SC Paderborn",
+    "outcomePrices": "[\"0.4\", \"0.6\"]",
+    "volume": "18128.022868",
+    "liquidity": "9399.6098",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3848429",
+    "question": "Will SV Elversberg be relegated from the 2026-27 Bundesliga?",
+    "groupItemTitle": "SV Elversberg",
+    "outcomePrices": "[\"0.13\", \"0.87\"]",
+    "volume": "1819.9990750000002",
+    "liquidity": "5605.6917",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3848430",
+    "question": "Will TSG Hoffenheim be relegated from the 2026-27 Bundesliga?",
+    "groupItemTitle": "TSG Hoffenheim",
+    "outcomePrices": "[\"0.0485\", \"0.9515\"]",
+    "volume": "706.190243",
+    "liquidity": "1249.07675",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3848432",
+    "question": "Will Union Berlin be relegated from the 2026-27 Bundesliga?",
+    "groupItemTitle": "Union Berlin",
+    "outcomePrices": "[\"0.395\", \"0.605\"]",
+    "volume": "3254.263292",
+    "liquidity": "9737.3489",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3848434",
+    "question": "Will VfB Stuttgart be relegated from the 2026-27 Bundesliga?",
+    "groupItemTitle": "VfB Stuttgart",
+    "outcomePrices": "[\"0.0145\", \"0.9855\"]",
+    "volume": "2310.922754",
+    "liquidity": "713.41644",
+    "active": true,
+    "closed": false
+   },
+   {
+    "id": "3848437",
+    "question": "Will Werder Bremen be relegated from the 2026-27 Bundesliga?",
+    "groupItemTitle": "Werder Bremen",
+    "outcomePrices": "[\"0.065\", \"0.935\"]",
+    "volume": "5301.031371000001",
+    "liquidity": "7393.7561",
+    "active": true,
+    "closed": false
+   }
+  ]
+ }
+]
